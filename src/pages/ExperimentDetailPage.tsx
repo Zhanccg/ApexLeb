@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useLabStore } from '@/data/store';
 import { DIRECTION_LABEL, ROLE_LABEL, type Conclusion, type StageId } from '@/data/schema';
 import { STAGE_MAP, checkStageCompletion, checkFindingEvidence, currentStage, evaluateComparison, stageProgress } from '@/pedagogy';
-import { generateReport } from '@/report/generator';
+import { generateReport, reportEvidenceBlockers } from '@/report/generator';
 import { G } from '@/engine/constants';
 import { fmtNum, isUsableTrial, readChannel, readMetric, readParam, samplesOf, trialInvalidReason } from '@/data/integrity';
 import { Button, CategoryBadge, EmptyState, Panel, StageSegments, Toast } from '@/components/ui';
@@ -102,6 +102,11 @@ export default function ExperimentDetailPage() {
     );
     if (!prevDone) {
       notify('请先完成前六个阶段，再生成正式报告', 'err');
+      return;
+    }
+    const blockers = reportEvidenceBlockers(exp);
+    if (blockers.length > 0) {
+      notify(`证据复核未通过：${blockers[0]}`, 'err');
       return;
     }
     addReport(generateReport(exp));
@@ -489,6 +494,27 @@ export default function ExperimentDetailPage() {
 
         {/* 结论 */}
         <Panel title="⑥ 结论" className="fade-up">
+          {exp.category === 'cornering' && comparison && exp.stages.conclude !== 'locked' && (
+            <div className="mb-3 space-y-1.5 rounded-lg border border-line bg-carbon-900/70 p-3 text-xs leading-relaxed">
+              <p className="panel-title">结论证据上下文</p>
+              <p className="text-mist-300">{exp.question}</p>
+              {exp.hypothesis && <p className="text-mist-500">原始假设：{exp.hypothesis.statement}</p>}
+              <p className="num text-mist-500">
+                合格对照 {comparison.counts.eligible} 条 · 不同取值 {comparison.counts.distinct} 个
+                {comparison.baseline && ` · 基准 #${String(comparison.baseline.index).padStart(2, '0')}`}
+              </p>
+              {(exp.analysis?.findings ?? []).map((f) => (
+                <p key={f.id} className="text-mist-500">
+                  发现：{f.observation}
+                  <span className="num ml-1 text-tele-300">证据 {f.evidenceTrialIds.join('、')}</span>
+                  <span className={`ml-1 font-bold ${f.supportsHypothesis ? 'text-tele-300' : 'text-race-400'}`}>
+                    {f.supportsHypothesis ? '支持假设' : '不支持假设'}
+                  </span>
+                </p>
+              ))}
+              {exp.analysis?.limitations && <p className="text-mist-600">模型局限（分析阶段）：{exp.analysis.limitations}</p>}
+            </div>
+          )}
           {exp.conclusion ? (
             <div className="space-y-2.5 text-sm">
               <p className="leading-relaxed text-mist-300">{exp.conclusion.statement}</p>
@@ -555,6 +581,20 @@ export default function ExperimentDetailPage() {
           <Button onClick={onGenerateReport}>生成实验报告 →</Button>
         </div>
       </Panel>
+
+      {exp.stages.report === 'done' && (
+        <div className="fade-up flex flex-wrap items-center gap-3 rounded-lg border border-tele-500/40 bg-tele-500/10 p-4">
+          <p className="text-sm font-bold text-tele-300">
+            🏁 科研流程闭环完成：问题 → 假设 → 设计 → 采集 → 分析 → 结论 → 报告。
+          </p>
+          <Link
+            to="/reports"
+            className="ml-auto rounded border border-tele-500/40 bg-tele-500/15 px-3 py-1.5 text-xs font-bold text-tele-300 transition-colors hover:bg-tele-500/25"
+          >
+            前往报告中心查看 / 下载 →
+          </Link>
+        </div>
+      )}
 
       {toast && <Toast message={toast.message} tone={toast.tone} />}
     </div>

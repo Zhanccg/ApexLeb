@@ -5,6 +5,7 @@
  */
 import type { Experiment, ReportDoc, StageId, StageStatus, Trial } from './schema';
 import { normalizeCorneringVariables } from './variables';
+import { SEED_BRAKING_DATA_SOURCE_NOTE } from './seed';
 
 export const isFiniteNumber = (v: unknown): v is number =>
   typeof v === 'number' && Number.isFinite(v);
@@ -142,6 +143,10 @@ export function sanitizeExperiment(e: unknown): Experiment | null {
       variablesVersion: norm.variablesVersion,
       legacyMigrationNote: norm.legacyMigrationNote ?? base.legacyMigrationNote,
     };
+  }
+  // 旧持久化的预置制动示例回填数据来源披露（不改动任何试跑数据）
+  if (base.id === 'exp-braking-mu' && !base.dataSourceNote) {
+    return { ...base, dataSourceNote: SEED_BRAKING_DATA_SOURCE_NOTE };
   }
   return base;
 }

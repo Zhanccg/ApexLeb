@@ -33,12 +33,21 @@ const HEADERS = [
   '试跑状态',
   '合格对照',
   '重复试跑',
-  '无效原因',
+  '不合格或无效原因',
 ];
 
 const escape = (v: string): string => (/[",\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
 const num = (v: number | undefined, digits: number): string => (v === undefined ? '' : v.toFixed(digits));
 const raw = (v: number | undefined): string => (v === undefined ? '' : String(v));
+
+/** 不合格 / 无效原因：统一取自 evaluateComparison 的 evaluations，与页面判定同口径 */
+function exclusionReason(e: ComparisonReport['evaluations'][number]): string {
+  if (!e.usable) return e.trial.invalidReason ?? '记录无效或结构损坏';
+  if (e.confounded.length > 0) {
+    return `混杂：${e.confounded.map((c) => `${c.name} ${c.symbol} 由基准 ${c.from} 变为 ${c.to}`).join('；')}`;
+  }
+  return '';
+}
 
 export function buildExperimentCsv(_exp: Experiment, report: ComparisonReport, scope: CsvScope): string {
   const rows = scope === 'raw' ? report.evaluations : report.evaluations.filter((e) => e.eligible);
@@ -65,7 +74,7 @@ export function buildExperimentCsv(_exp: Experiment, report: ComparisonReport, s
         escape(STATUS_LABEL[t.status] ?? t.status),
         e.eligible ? '是' : '否',
         e.replicate ? '是' : '否',
-        escape(t.invalidReason ?? ''),
+        escape(exclusionReason(e)),
       ].join(','),
     );
   }

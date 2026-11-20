@@ -378,7 +378,7 @@ export default function AnalysisWorkbench({
           </Button>
         </div>
         <p className="mt-2 text-[10px] leading-relaxed text-mist-600">
-          原始记录口径包含全部 {report.counts.total} 条试跑，并以「合格对照 / 重复试跑 / 无效原因」列明确标记；
+          原始记录口径包含全部 {report.counts.total} 条试跑，并以「合格对照 / 重复试跑 / 不合格或无效原因」列明确标记；
           合格对照口径仅含 {report.counts.eligible} 条 eligible 记录。两者数值与页面表格、曲线完全一致，均含试跑 ID 与时间戳。
         </p>
       </div>

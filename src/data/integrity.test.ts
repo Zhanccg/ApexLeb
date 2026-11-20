@@ -210,6 +210,47 @@ describe('旧变量字段迁移（T04 案例五）', () => {
   });
 });
 
+describe('预置制动示例披露回填（T06 兼容）', () => {
+  it('旧持久化制动示例读取时回填数据来源披露，不改动试跑', () => {
+    const out = sanitizeExperiment({
+      id: 'exp-braking-mu',
+      title: '摩擦系数对制动距离的影响',
+      category: 'braking',
+      question: 'q',
+      hypothesis: null,
+      variables: [],
+      trials: [goodTrial],
+      analysis: null,
+      conclusion: null,
+      stages: {},
+      tags: [],
+      createdAt: '2026-11-19T10:00:00.000Z',
+      updatedAt: '2026-11-19T10:00:00.000Z',
+    });
+    expect(out?.dataSourceNote).toContain('人为扰动');
+    expect(out?.dataSourceNote).toContain('不属于真实实测');
+    expect(out?.trials).toHaveLength(1);
+  });
+  it('用户自建制动实验不被强加预置披露', () => {
+    const out = sanitizeExperiment({
+      id: 'exp-user-braking',
+      title: 't',
+      category: 'braking',
+      question: 'q',
+      hypothesis: null,
+      variables: [],
+      trials: [],
+      analysis: null,
+      conclusion: null,
+      stages: {},
+      tags: [],
+      createdAt: 'x',
+      updatedAt: 'x',
+    });
+    expect(out?.dataSourceNote).toBeUndefined();
+  });
+});
+
 describe('展示格式化 fmtNum', () => {
   it('有限数值正常格式化', () => {
     expect(fmtNum(4.5)).toBe('4.50');

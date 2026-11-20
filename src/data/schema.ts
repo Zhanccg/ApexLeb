@@ -126,6 +126,8 @@ export interface Experiment {
   legacyMigrationNote?: string;
   /** 方法编辑后的对照资格重算说明 */
   methodNote?: string;
+  /** 数据来源披露（如预置示例的人为扰动说明），报告必须原样输出 */
+  dataSourceNote?: string;
 }
 
 export interface ReportDoc {

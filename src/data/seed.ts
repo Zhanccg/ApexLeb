@@ -8,6 +8,10 @@ import type { Experiment, StageId, StageStatus, TelemetrySample, Trial } from '.
 import { TEMPLATES } from './templates';
 
 const now = new Date();
+
+/** 预置制动示例的数据来源披露：报告与读取兼容必须原样保留 */
+export const SEED_BRAKING_DATA_SOURCE_NOTE =
+  '预置教学示例：制动汇总数据含 ±1.5% 人为扰动以演示测量噪声，备注中的复跑未附原始记录；该示例不属于真实实测或用户试跑数据。';
 const iso = (daysAgo: number, hour = 10) => {
   const d = new Date(now);
   d.setDate(d.getDate() - daysAgo);
@@ -115,6 +119,7 @@ export function buildSeedExperiments(): Experiment[] {
     conclusion: null,
     stages: stagesUpTo('analyze'),
     tags: braking.tags,
+    dataSourceNote: SEED_BRAKING_DATA_SOURCE_NOTE,
     createdAt: iso(6),
     updatedAt: iso(3, 16),
   };

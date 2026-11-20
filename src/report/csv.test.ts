@@ -63,9 +63,37 @@ describe('CSV 导出（T05）', () => {
     const csv = buildExperimentCsv(exp, report, 'raw');
     expect(csv.startsWith('\uFEFF')).toBe(true);
     const header = csv.slice(1).split('\r\n')[0];
-    for (const h of ['试跑ID', '记录时间', '自变量', '自变量单位', '车速(km/h)', '弯道半径(m)', '附着系数μ', '侧向加速度(m/s²)', '附着利用率(%)', '临界速度(km/h)', '试跑状态', '合格对照', '重复试跑', '无效原因']) {
+    for (const h of ['试跑ID', '记录时间', '自变量', '自变量单位', '车速(km/h)', '弯道半径(m)', '附着系数μ', '侧向加速度(m/s²)', '附着利用率(%)', '临界速度(km/h)', '试跑状态', '合格对照', '重复试跑', '不合格或无效原因']) {
       expect(header).toContain(h);
     }
+  });
+
+  it('混杂试跑末列输出具体控制变量与基准值', () => {
+    const lines = buildExperimentCsv(exp, report, 'raw').slice(1).trim().split('\r\n');
+    const confounded = lines.find((l) => l.startsWith('trial-3,'))!;
+    const last = confounded.split(',').slice(15).join(',');
+    expect(last).toContain('混杂');
+    expect(last).toContain('弯道半径 R');
+    expect(last).toContain('基准 50');
+    expect(last).toContain('变为 60');
+  });
+
+  it('无效记录末列保留原有无效原因；合格重复试跑末列为空', () => {
+    const lines = buildExperimentCsv(exp, report, 'raw').slice(1).trim().split('\r\n');
+    const invalid = lines.find((l) => l.startsWith('trial-6,'))!;
+    expect(invalid.split(',').slice(15).join(',')).toContain('指标含非有限数值');
+    const replicate = lines.find((l) => l.startsWith('trial-2,'))!;
+    const cells = replicate.split(',');
+    expect(cells[13]).toBe('是');
+    expect(cells[14]).toBe('是');
+    expect(cells[15]).toBe('');
+    const normal = lines.find((l) => l.startsWith('trial-1,'))!;
+    expect(normal.split(',')[15]).toBe('');
+  });
+
+  it('合格 CSV 不含混杂/无效行，末列全为空', () => {
+    const lines = buildExperimentCsv(exp, report, 'eligible').slice(1).trim().split('\r\n').slice(1);
+    for (const l of lines) expect(l.split(',')[15]).toBe('');
   });
 
   it('原始口径包含全部试跑并标记混杂/无效/重复', () => {

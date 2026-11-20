@@ -64,10 +64,25 @@ export function checkStageCompletion(exp: Experiment, stage: StageId): StageChec
         ? { ok: true, reason: '已有分析发现' }
         : { ok: false, reason: '需要至少一条分析发现' };
     }
-    case 'conclude':
-      return exp.conclusion && exp.conclusion.statement.trim().length >= 8
-        ? { ok: true, reason: '结论已记录' }
-        : { ok: false, reason: '需要结论陈述与假设判定' };
+    case 'conclude': {
+      if (!exp.conclusion || exp.conclusion.statement.trim().length < 8) {
+        return { ok: false, reason: '需要不少于 8 个字的结论陈述' };
+      }
+      if (!exp.conclusion.limitations.trim()) {
+        return { ok: false, reason: '请填写模型局限性（简化模型假设与适用范围）后才能完成结论阶段' };
+      }
+      if (exp.category === 'cornering') {
+        if (!exp.analysis || exp.analysis.findings.length === 0) {
+          return { ok: false, reason: '需要至少一条带证据的研究发现（分析工作台）' };
+        }
+        const report = evaluateComparison(exp);
+        const problems = exp.analysis.findings.flatMap((f, i) =>
+          checkFindingEvidence(report, f).problems.map((p) => `发现 #${i + 1}：${p}`),
+        );
+        if (problems.length > 0) return { ok: false, reason: problems.join('；') };
+      }
+      return { ok: true, reason: '结论、局限与证据链齐全' };
+    }
     case 'report':
       return { ok: false, reason: '请在报告中心生成实验报告' };
   }

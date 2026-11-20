@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLabStore } from '@/data/store';
-import { generateReport, downloadMarkdown } from '@/report/generator';
+import { generateReport, downloadMarkdown, reportEvidenceBlockers } from '@/report/generator';
 import { STAGE_ORDER } from '@/pedagogy';
 import { Button, EmptyState, Panel, StageSegments } from '@/components/ui';
 import MarkdownView from '@/components/MarkdownView';
@@ -16,6 +16,7 @@ export default function ReportsPage() {
 
   const [selectedId, setSelectedId] = useState<string | null>(reports[0]?.id ?? null);
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
+  const [genError, setGenError] = useState<string | null>(null);
 
   const selected = reports.find((r) => r.id === selectedId) ?? reports[0] ?? null;
   const readyExps = experiments.filter(
@@ -46,7 +47,17 @@ export default function ReportsPage() {
                   <Link to={`/experiments/${e.id}`} className="text-sm font-bold text-mist-100 hover:text-tele-300">{e.title}</Link>
                   <StageSegments stages={e.stages} className="mt-2 max-w-xs" />
                 </div>
-                <Button variant="tele" onClick={() => { const doc = generateReport(e); addReport(doc); setSelectedId(doc.id); }}>
+                <Button variant="tele" onClick={() => {
+                  const blockers = reportEvidenceBlockers(e);
+                  if (blockers.length > 0) {
+                    setGenError(`「${e.title}」证据复核未通过：${blockers[0]}`);
+                    return;
+                  }
+                  setGenError(null);
+                  const doc = generateReport(e);
+                  addReport(doc);
+                  setSelectedId(doc.id);
+                }}>
                   生成报告
                 </Button>
               </div>
@@ -54,6 +65,12 @@ export default function ReportsPage() {
           </div>
         )}
       </Panel>
+
+      {genError && (
+        <p role="alert" className="fade-up rounded border border-race-500/50 bg-race-500/10 px-3 py-2 text-xs font-semibold text-race-400">
+          ✕ {genError}
+        </p>
+      )}
 
       {reports.length === 0 ? (
         <EmptyState icon="📄" title="还没有报告" hint="完成一个实验的七个阶段后生成报告；种子制动实验已推进到分析阶段，再走两步即可体验完整流程。" />

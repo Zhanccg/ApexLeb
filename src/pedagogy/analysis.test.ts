@@ -114,3 +114,36 @@ describe('研究发现证据校验与分析阶段推进（T05）', () => {
     expect(out?.analysis?.findings[0].evidenceTrialIds).toEqual(['trial-1']);
   });
 });
+
+describe('结论阶段证据与局限校验（T06）', () => {
+  const conclusion = { statement: '在 R=50 m、μ=1 条件下 ay 与 v² 成正比，假设被支持。', hypothesisVerdict: 'supported' as const, limitations: '简化质点模型，未含轮胎特性与气动。', createdAt: 'x' };
+
+  it('结论 + 局限 + 合格证据齐全 → 允许完成结论', () => {
+    const exp = { ...mkExp(standard, analysis(['trial-1', 'trial-2'])), conclusion };
+    expect(checkStageCompletion(exp, 'conclude').ok).toBe(true);
+  });
+  it('缺少模型局限 → 禁止并给出修正建议', () => {
+    const exp = { ...mkExp(standard, analysis(['trial-1'])), conclusion: { ...conclusion, limitations: '  ' } };
+    const r = checkStageCompletion(exp, 'conclude');
+    expect(r.ok).toBe(false);
+    expect(r.reason).toContain('模型局限性');
+  });
+  it('缺少结论陈述 → 禁止', () => {
+    const exp = { ...mkExp(standard, analysis(['trial-1'])), conclusion: { ...conclusion, statement: '短' } };
+    expect(checkStageCompletion(exp, 'conclude').ok).toBe(false);
+  });
+  it('证据因方案变更失效 → 禁止完成结论并提示重新确认', () => {
+    const exp = { ...mkExp(standard, analysis(['trial-1', 'trial-2'])), conclusion, variables: corneringVariables('radiusM') };
+    const r = checkStageCompletion(exp, 'conclude');
+    expect(r.ok).toBe(false);
+    expect(r.reason).toContain('重新确认研究发现');
+  });
+  it('无研究发现 → 禁止完成结论', () => {
+    const exp = { ...mkExp(standard, null), conclusion };
+    expect(checkStageCompletion(exp, 'conclude').ok).toBe(false);
+  });
+  it('制动历史实验：结论 + 局限即可（不套用过期对照证据）', () => {
+    const braking = { ...mkExp(standard, null), category: 'braking' as const, conclusion };
+    expect(checkStageCompletion(braking, 'conclude').ok).toBe(true);
+  });
+});
