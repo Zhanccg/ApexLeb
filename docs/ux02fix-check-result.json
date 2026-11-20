@@ -1,0 +1,87 @@
+{
+  "steps": [
+    {
+      "name": "after-3-runs",
+      "header": "已保存 3 · 合格 2 · 水平 1/3",
+      "feedback": "试跑已保存，但不计入有效对照 | 弯道半径 R 从 50m 变为 60m —— 控制变量被同时改变，无法归因。 | 请将弯道半径恢复到 50m后重新运行。原始试跑已保留，不会删除。 | 一键恢复控制变量到基准值 | 试跑 #03 · trial-mwoysfqr-mde2a · 「已保存」≠「合格对照」",
+      "toast": false
+    },
+    {
+      "name": "after-refresh-target",
+      "thirdId": "trial-mwoysfqr-mde2a",
+      "feedbackHasThirdId": true
+    },
+    {
+      "name": "restore-after-refresh",
+      "inputs": [
+        "72",
+        "50",
+        "1"
+      ],
+      "toast": false,
+      "fixButtonUnobstructed": true
+    },
+    {
+      "name": "after-4-runs",
+      "header": "已保存 4 · 合格 3 · 水平 2/3",
+      "oldConfoundedPreserved": true
+    },
+    {
+      "name": "after-5-runs",
+      "header": "已保存 5 · 合格 4 · 水平 3/3",
+      "next": "下一步 对照要求已满足：标记「数据采集」完成，进入数据分析 标记采集完成 模型假设：水平道路、匀速圆周运动、忽略空气动力与纵向轮胎力。λ > 1 仅表示在该简化模型中无法维持指定半径的匀速圆周运动， 不构成对真实车辆失控的精确预测。 "
+    },
+    {
+      "name": "collect-done",
+      "analyze": true
+    },
+    {
+      "name": "historical-insufficient",
+      "next": "下一步 历史采集完成标记保留；当前方案水平仅 1/3，合格对照不足：请先补齐合格对照 查看历史分析结果 模型假设：水平道路、匀速圆周运动、忽略空气动力与纵向轮胎力。λ > 1 仅表示在该简化模型中无法维持指定半径的匀速圆周运动， 不构",
+      "workbenchChip": true,
+      "noFalseAnalysisClaim": true
+    },
+    {
+      "name": "conclude-done-report-pending",
+      "next": "下一步 结论已完成：生成研究报告以完成闭环 生成报告 模型假设：水平道路、匀速圆周运动、忽略空气动力与纵向轮胎力。λ > 1 仅表示在该简化模型中无法维持指定半径的匀速圆周运动， 不构成对真实车辆失控的精确预测。 #\tv km/h\t",
+      "notClosedLoop": true
+    },
+    {
+      "name": "report-done",
+      "next": "下一步 科研闭环已完成：报告已生成，可在报告中心查看与下载 查看报告 模型假设：水平道路、匀速圆周运动、忽略空气动力与纵向轮胎力。λ > 1 仅表示在该简化模型中无法维持指定半径的匀速圆周运动， 不构成对真实车辆失控的精确预测。 #"
+    },
+    {
+      "name": "report-done-after-refresh",
+      "next": "下一步 科研闭环已完成：报告已生成，可在报告中心查看与下载 查看报告 模型假设：水平道路、匀速圆周运动、忽略空气动力与纵向轮胎力。λ > 1 仅表示在该简化模型中无法维持指定半径的匀速圆周运动， 不构成对真实车辆失控的精确预测。 #"
+    },
+    {
+      "name": "csv",
+      "rawRows": 5,
+      "eligibleRows": 4,
+      "rawHas72R60": true
+    },
+    {
+      "name": "mobile-confounded",
+      "toast": false,
+      "feedback": "试跑已保存，但不计入有效对照 | 弯道半径 R 从 50m 变为 60m —— 控制变量被同时改变，无法归因。 | 请将"
+    },
+    {
+      "name": "mobile-restore",
+      "inputs": [
+        "72",
+        "50",
+        "1"
+      ],
+      "toast": false,
+      "fixUnobstructed": true,
+      "runUnobstructed": true,
+      "inputUnobstructed": true,
+      "overflow": 0
+    },
+    {
+      "name": "final-counts",
+      "header": "已保存 5 · 合格 4 · 水平 3/3"
+    }
+  ],
+  "consoleErrors": []
+}

@@ -158,7 +158,7 @@ export function EmptyState({ icon, title, hint }: { icon: string; title: string;
 export function Toast({ message, tone }: { message: string; tone: 'ok' | 'err' }) {
   return (
     <div
-      className={`fade-up fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-md border px-4 py-2.5 text-sm font-medium shadow-xl backdrop-blur ${
+      className={`fade-up pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-md border px-4 py-2.5 text-sm font-medium shadow-xl backdrop-blur ${
         tone === 'ok'
           ? 'border-tele-500/50 bg-carbon-800/95 text-tele-300'
           : 'border-race-500/50 bg-carbon-800/95 text-race-400'

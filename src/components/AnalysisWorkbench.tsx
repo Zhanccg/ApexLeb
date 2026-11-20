@@ -103,6 +103,11 @@ export default function AnalysisWorkbench({
       {/* 研究上下文 */}
       <div className="rounded-lg border border-line bg-carbon-900/70 p-4">
         <p className="panel-title">研究上下文</p>
+        {report.historicalCollectRecheck && (
+          <p role="note" className="mt-1 rounded border border-signal-amber/50 bg-signal-amber/10 px-2 py-1 text-[11px] font-semibold leading-relaxed text-signal-amber">
+            ⚠ 历史结果查看：当前实验方案合格对照不足（水平 {report.counts.distinct}/3），以下分析基于历史合格记录，不代表当前方案已具备分析资格。
+          </p>
+        )}
         <p className="mt-1.5 text-sm font-semibold leading-relaxed text-mist-100">{exp.question}</p>
         {exp.hypothesis && (
           <p className="mt-1 text-xs leading-relaxed text-mist-500">

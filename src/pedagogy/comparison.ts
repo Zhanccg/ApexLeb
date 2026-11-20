@@ -80,6 +80,40 @@ export function validateVariableRoles(exp: Experiment): string[] {
   return issues;
 }
 
+/**
+ * UX-02-FIX-B：一键纠错的纯函数恢复计划。
+ * 以目标试跑已保存的原始参数为基础，仅将混杂控制变量替换为基准值；
+ * 保留自变量取值；缺参时返回问题清单，绝不猜测或补造。
+ */
+export function planControlRestore(
+  target: Trial,
+  baseline: Trial | null,
+  confounded: ConfoundDiff[],
+): { ok: true; params: Record<string, number> } | { ok: false; problems: string[] } {
+  const problems: string[] = [];
+  const params: Record<string, number> = {};
+  for (const key of CORNERING_PARAM_KEYS) {
+    const isConfounded = confounded.some((d) => d.key === key);
+    if (isConfounded) {
+      const base = baseline ? readParam(baseline, key) : undefined;
+      if (base === undefined) {
+        problems.push(`基准记录缺少 ${key}，无法自动恢复该控制变量`);
+        continue;
+      }
+      params[key] = base;
+    } else {
+      const orig = readParam(target, key);
+      if (orig === undefined) {
+        problems.push(`目标试跑缺少 ${key}，无法自动恢复（请手动填写）`);
+        continue;
+      }
+      params[key] = orig;
+    }
+  }
+  if (problems.length > 0) return { ok: false, problems };
+  return { ok: true, params };
+}
+
 /** 研究发现的证据校验：引用必须存在且当前合格（T05，规则驱动） */
 export interface EvidenceCheck {
   ok: boolean;

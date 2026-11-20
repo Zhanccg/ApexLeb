@@ -3,6 +3,7 @@ import type { Experiment } from '@/data/schema';
 import type { ComparisonReport } from '@/pedagogy';
 import { useLabStore } from '@/data/store';
 import { isUsableTrial, readParam } from '@/data/integrity';
+import { planControlRestore, MIN_DISTINCT_LEVELS, MIN_ELIGIBLE_TRIALS } from '@/pedagogy';
 import {
   CORNERING_MODEL_VERSION,
   computeCorneringRun,
@@ -21,12 +22,10 @@ const FIELDS: Array<{ key: keyof CorneringParams; label: string; symbol: string;
 export default function CorneringRunner({
   exp,
   report,
-  notify,
   onOpenMethod,
 }: {
   exp: Experiment;
   report: ComparisonReport;
-  notify: (message: string, tone: 'ok' | 'err') => void;
   onOpenMethod?: () => void;
 }) {
   const addTrial = useLabStore((s) => s.addTrial);
@@ -38,6 +37,9 @@ export default function CorneringRunner({
   });
   const [errors, setErrors] = useState<Partial<Record<keyof CorneringParams, string>>>({});
   const [computeError, setComputeError] = useState<string | null>(null);
+  const [fixError, setFixError] = useState<string | null>(null);
+  const [stageError, setStageError] = useState<string | null>(null);
+  const [fixedForTrialId, setFixedForTrialId] = useState<string | null>(null);
   const [lastRunId, setLastRunId] = useState<string | null>(null);
 
   const completed = exp.trials.filter(isUsableTrial);
@@ -57,14 +59,12 @@ export default function CorneringRunner({
     if (!check.ok) {
       setErrors({ [check.field]: check.error });
       setComputeError(null);
-      notify(check.error, 'err');
       return;
     }
     setErrors({});
     const comp = computeCorneringRun(check.value);
     if (!comp.ok) {
       setComputeError(comp.error);
-      notify(comp.error, 'err');
       return;
     }
     setComputeError(null);
@@ -95,14 +95,13 @@ export default function CorneringRunner({
       modelVersion: CORNERING_MODEL_VERSION,
     });
     if (!trial) {
-      notify('试跑未保存：实验不存在或记录含非有限数值', 'err');
+      setComputeError('试跑未保存：实验不存在或记录含非有限数值');
       return;
     }
     setLastRunId(trial.id);
-    notify(
-      `试跑 ${String(trial.index).padStart(2, '0')} 已保存：ay = ${res.lateralAccelMs2.toFixed(2)} m/s²，λ = ${(res.gripUtilization * 100).toFixed(1)}%`,
-      'ok',
-    );
+    setFixError(null);
+    setStageError(null);
+    setFixedForTrialId(null);
   };
 
   const exceeded = latestResult?.status === 'grip-exceeded';
@@ -123,20 +122,26 @@ export default function CorneringRunner({
             : 'scheme';
 
   const unitOf = (key: string) => report.controlled.find((v) => v.id === key)?.unit ?? '';
+  // FIX-B：以资格卡对应试跑的已保存原始参数为基础，仅替换混杂控制变量；保留自变量取值
   const fixControls = () => {
-    if (!focusEval || !report.baseline) return;
-    const next = { ...raw };
-    for (const d of focusEval.confounded) {
-      const base = readParam(report.baseline, d.key);
-      if (base !== undefined) next[d.key as keyof CorneringParams] = String(base);
+    if (!focusEval) return;
+    const plan = planControlRestore(focusEval.trial, report.baseline, focusEval.confounded);
+    if (!plan.ok) {
+      setFixError(plan.problems.join('；'));
+      return;
     }
-    setRaw(next);
+    setRaw({
+      speedKmh: String(plan.params.speedKmh),
+      radiusM: String(plan.params.radiusM),
+      mu: String(plan.params.mu),
+    });
     setErrors({});
-    notify('控制变量已恢复为基准值，请重新运行试验', 'ok');
+    setFixError(null);
+    setFixedForTrialId(focusEval.trial.id);
   };
 
   const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  const missingLevels = Math.max(0, 3 - report.counts.distinct);
+  const missingLevels = Math.max(0, MIN_DISTINCT_LEVELS - report.counts.distinct);
   const nextStep: { text: string; action?: { label: string; fn: () => void } } = (() => {
     if (exp.stages.hypothesis !== 'done') {
       return { text: '完成研究假设与变量角色设置', action: onOpenMethod ? { label: '打开方法编辑器', fn: onOpenMethod } : undefined };
@@ -149,6 +154,9 @@ export default function CorneringRunner({
     }
     if (exp.stages.collect === 'active') {
       if (feedbackKind === 'confounded' && focusEval) {
+        if (fixedForTrialId === focusEval.trial.id) {
+          return { text: '已按该试跑原始参数恢复控制变量（自变量取值保留），请点击「运行试验」生成新记录', action: { label: '运行试验', fn: onRun } };
+        }
         return {
           text: `恢复 ${focusEval.confounded.map((d) => d.name).join('、')} 至基准值后重新运行`,
           action: { label: '一键恢复控制变量', fn: fixControls },
@@ -163,9 +171,16 @@ export default function CorneringRunner({
           label: '标记采集完成',
           fn: () => {
             const r = completeStage(exp.id, 'collect');
-            notify(r.ok ? '采集阶段完成，进入数据分析' : r.reason, r.ok ? 'ok' : 'err');
+            setStageError(r.ok ? null : r.reason);
           },
         },
+      };
+    }
+    // FIX-C：历史采集完成但当前方案对照不足 → 优先补齐建议，查看分析明确标注为历史结果
+    if (!report.collectReady) {
+      return {
+        text: `历史采集完成标记保留；当前方案水平仅 ${report.counts.distinct}/${MIN_DISTINCT_LEVELS}，合格对照不足：请先补齐合格对照`,
+        action: { label: '查看历史分析结果', fn: () => scrollTo('analysis-workbench') },
       };
     }
     if (exp.stages.analyze === 'active') {
@@ -174,7 +189,11 @@ export default function CorneringRunner({
     if (exp.stages.conclude === 'active') {
       return { text: '填写研究结论与模型局限性', action: { label: '前往结论', fn: () => scrollTo('conclusion-panel') } };
     }
-    return { text: '科研闭环已完成：生成并下载研究报告', action: { label: '前往报告面板', fn: () => scrollTo('report-panel') } };
+    // FIX-C：结论完成但报告未生成 → 引导生成报告，而非宣称闭环完成
+    if (exp.stages.report !== 'done') {
+      return { text: '结论已完成：生成研究报告以完成闭环', action: { label: '生成报告', fn: () => scrollTo('report-panel') } };
+    }
+    return { text: '科研闭环已完成：报告已生成，可在报告中心查看与下载', action: { label: '查看报告', fn: () => scrollTo('report-panel') } };
   })();
 
   const FEEDBACK_STYLE = {
@@ -246,6 +265,7 @@ export default function CorneringRunner({
                     setRaw({ ...raw, [f.key]: e.target.value });
                     if (errors[f.key]) setErrors({ ...errors, [f.key]: undefined });
                     if (computeError) setComputeError(null);
+                    if (fixError) setFixError(null);
                   }}
                   className="num w-full bg-transparent px-3 py-2 text-sm font-bold text-mist-100 focus:outline-none"
                 />
@@ -372,6 +392,11 @@ export default function CorneringRunner({
                     请将{focusEval.confounded.map((d) => `${d.name}恢复到 ${d.from}${unitOf(d.key)}`).join('、')}后重新运行。原始试跑已保留，不会删除。
                   </p>
                   <Button variant="ghost" onClick={fixControls} className="mt-2">一键恢复控制变量到基准值</Button>
+                  {fixedForTrialId === focusEval.trial.id && (
+                    <p className="mt-2 rounded border border-tele-500/40 bg-tele-500/10 px-2 py-1.5 text-[11px] font-semibold leading-relaxed text-tele-300">
+                      ✓ 已按试跑 #{String(focusEval.trial.index).padStart(2, '0')} 的原始参数恢复：自变量取值保留，仅混杂控制变量替换为基准值。请确认后点击「运行试验」。
+                    </p>
+                  )}
                 </div>
               )}
               {(feedbackKind === 'invalid' || feedbackKind === 'scheme') && (
@@ -389,6 +414,11 @@ export default function CorneringRunner({
               </p>
             </div>
           </div>
+          {fixError && (
+            <p role="alert" className="mt-2 rounded border border-race-500/50 bg-race-500/10 px-2 py-1.5 text-[11px] font-semibold leading-relaxed text-race-400">
+              ✕ 无法自动恢复：{fixError}
+            </p>
+          )}
         </div>
       )}
 
@@ -405,11 +435,18 @@ export default function CorneringRunner({
           </p>
           <p className="num text-[10px] text-mist-600">已保存 {report.counts.total} 条（含重复 / 混杂 / 无效）</p>
         </div>
-        <p className={`mt-2 text-[11px] leading-relaxed ${report.collectReady ? 'font-semibold text-tele-300' : 'text-mist-500'}`}>
+        <p className={`mt-2 text-[11px] leading-relaxed ${report.collectReady ? 'font-semibold text-tele-300' : exp.stages.collect === 'done' ? 'font-semibold text-signal-amber' : 'text-mist-500'}`}>
           {report.collectReady
             ? '对照要求已满足：可标记「数据采集」完成并进入数据分析。'
-            : `距离解锁数据分析还差 ${missingLevels} 个不同有效自变量水平${report.counts.eligible < 3 ? `，合格对照还差 ${3 - report.counts.eligible} 条` : ''}。`}
+            : exp.stages.collect === 'done'
+              ? `历史采集完成标记保留；当前方案水平仅 ${report.counts.distinct}/${MIN_DISTINCT_LEVELS}，合格对照不足：补齐前不建议基于当前方案下新结论。`
+              : `距离解锁数据分析还差 ${missingLevels} 个不同有效自变量水平${report.counts.eligible < MIN_ELIGIBLE_TRIALS ? `，合格对照还差 ${MIN_ELIGIBLE_TRIALS - report.counts.eligible} 条` : ''}。`}
         </p>
+        {stageError && (
+          <p role="alert" className="mt-2 rounded border border-race-500/50 bg-race-500/10 px-2 py-1.5 text-[11px] font-semibold text-race-400">
+            ✕ {stageError}
+          </p>
+        )}
         <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-line pt-2">
           <span className="panel-title shrink-0">下一步</span>
           <p className="min-w-0 flex-1 text-xs font-semibold text-mist-300">{nextStep.text}</p>

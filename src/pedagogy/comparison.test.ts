@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { checkStageCompletion } from './rules';
-import { checkFindingEvidence, evaluateComparison, validateVariableRoles } from './comparison';
+import { checkFindingEvidence, evaluateComparison, validateVariableRoles, planControlRestore, MIN_DISTINCT_LEVELS } from './comparison';
 import { corneringVariables } from '@/data/variables';
 import { computeCorneringRun } from '@/engine';
 import { fmtNum, readParam, sanitizeExperiment, trialInvalidReason } from '@/data/integrity';
@@ -234,6 +234,66 @@ describe('FIX-01：关键参数完整性与基准选择', () => {
     expect(report.collectReady).toBe(true);
     expect(report.baseline?.params.speedKmh).toBe(54.5);
     expect(report.baseline?.params.radiusM).toBe(50.5);
+  });
+});
+
+describe('UX-02-FIX 回归：摘要计数与一键纠错恢复计划', () => {
+  it('FIX-A：第三条混杂后计数 3/2/1，第五条后 5/4/3', () => {
+    const three = evaluateComparison(mkExp([mkTrial(1, 54, 50), mkTrial(2, 54, 50), mkTrial(3, 72, 60)]));
+    expect(three.counts).toEqual({ total: 3, valid: 3, eligible: 2, distinct: 1 });
+    const five = evaluateComparison(mkExp([
+      mkTrial(1, 54, 50), mkTrial(2, 54, 50), mkTrial(3, 72, 60), mkTrial(4, 72, 50), mkTrial(5, 90, 50),
+    ]));
+    expect(five.counts).toEqual({ total: 5, valid: 5, eligible: 4, distinct: 3 });
+    expect(five.collectReady).toBe(true);
+    expect(MIN_DISTINCT_LEVELS).toBe(3);
+  });
+
+  it('FIX-B：恢复计划保留自变量 72，仅替换混杂半径为基准 50', () => {
+    const exp = mkExp([mkTrial(1, 54, 50), mkTrial(2, 72, 60)]);
+    const report = evaluateComparison(exp);
+    const target = report.evaluations[1];
+    expect(target.confounded.map((c) => c.key)).toEqual(['radiusM']);
+    const plan = planControlRestore(target.trial, report.baseline, target.confounded);
+    expect(plan.ok).toBe(true);
+    if (plan.ok) expect(plan.params).toEqual({ speedKmh: 72, radiusM: 50, mu: 1 });
+  });
+
+  it('FIX-B：半径自变量模式只恢复车速，保留待验证半径', () => {
+    const exp = mkExp([mkTrial(1, 54, 30), mkTrial(2, 72, 40)], 'radiusM');
+    const report = evaluateComparison(exp);
+    const target = report.evaluations[1];
+    expect(target.confounded.map((c) => c.key)).toEqual(['speedKmh']);
+    const plan = planControlRestore(target.trial, report.baseline, target.confounded);
+    expect(plan.ok).toBe(true);
+    if (plan.ok) expect(plan.params).toEqual({ speedKmh: 54, radiusM: 40, mu: 1 });
+  });
+
+  it('FIX-B：基准缺参时拒绝自动恢复并说明', () => {
+    const base = { ...mkTrial(1, 54, 50), params: { speedKmh: 54, mu: 1 } as Trial['params'] };
+    const target = mkTrial(2, 72, 60);
+    const plan = planControlRestore(target, base, [{ key: 'radiusM', name: '弯道半径', symbol: 'R', from: 50, to: 60 }]);
+    expect(plan.ok).toBe(false);
+    if (!plan.ok) expect(plan.problems.join()).toContain('基准记录缺少 radiusM');
+  });
+
+  it('FIX-B：目标缺参时拒绝补造', () => {
+    const target = { ...mkTrial(2, 72, 60), params: { radiusM: 60, mu: 1 } as Trial['params'] };
+    const plan = planControlRestore(target, mkTrial(1, 54, 50), []);
+    expect(plan.ok).toBe(false);
+    if (!plan.ok) expect(plan.problems.join()).toContain('目标试跑缺少 speedKmh');
+  });
+
+  it('FIX-B：恢复后重跑判定合格且水平增加（旧混杂记录保留）', () => {
+    const exp = mkExp([mkTrial(1, 54, 50), mkTrial(2, 72, 60)]);
+    const report = evaluateComparison(exp);
+    const plan = planControlRestore(report.evaluations[1].trial, report.baseline, report.evaluations[1].confounded);
+    if (!plan.ok) throw new Error('plan failed');
+    const rerun = mkTrial(3, plan.params.speedKmh, plan.params.radiusM, plan.params.mu);
+    const after = evaluateComparison(mkExp([...exp.trials, rerun]));
+    expect(after.counts).toEqual({ total: 3, valid: 3, eligible: 2, distinct: 2 });
+    expect(after.evaluations[1].eligible).toBe(false);
+    expect(after.evaluations[2].eligible).toBe(true);
   });
 });
 

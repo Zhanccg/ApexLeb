@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useLabStore } from '@/data/store';
 import { DIRECTION_LABEL, ROLE_LABEL, type Conclusion, type StageId } from '@/data/schema';
-import { STAGE_MAP, checkStageCompletion, checkFindingEvidence, currentStage, evaluateComparison, stageProgress } from '@/pedagogy';
+import { STAGE_MAP, checkStageCompletion, checkFindingEvidence, currentStage, evaluateComparison, stageProgress, MIN_DISTINCT_LEVELS } from '@/pedagogy';
 import { generateReport, reportEvidenceBlockers } from '@/report/generator';
 import { G } from '@/engine/constants';
 import { fmtNum, fmtParam, isUsableTrial, readChannel, readMetric, readParam, samplesOf, trialInvalidReason } from '@/data/integrity';
@@ -104,7 +104,7 @@ export default function ExperimentDetailPage() {
 
   const onCompleteStage = () => {
     const r = completeStage(exp.id, shownStage);
-    notify(r.ok ? `阶段「${stageDef.name}」已完成` : r.reason, r.ok ? 'ok' : 'err');
+    // FIX-D：阶段结果由追踪器与运行器就地反馈呈现，不再弹浮层遮挡试跑区
     if (r.ok) setFocusStage(null);
   };
 
@@ -303,8 +303,8 @@ export default function ExperimentDetailPage() {
         className="fade-up"
         right={
           <span className="num text-[10px] text-mist-600">
-            {comparison
-              ? `已保存 ${exp.trials.length} · 合格 ${completedTrials.length} · 水平 ${comparison.counts.distinct}/3`
+            {comparison && exp.category === 'cornering'
+              ? `已保存 ${comparison.counts.total} · 合格 ${comparison.counts.eligible} · 水平 ${comparison.counts.distinct}/${MIN_DISTINCT_LEVELS}`
               : `已保存 ${exp.trials.length} · 有效 ${completedTrials.length}`}
           </span>
         }
@@ -320,7 +320,7 @@ export default function ExperimentDetailPage() {
             <EmptyState icon="🔒" title="采集阶段未解锁" hint="请先完成实验设计阶段，再运行试跑——科研流程不允许跳步。" />
           ) : (
             <div className="space-y-4">
-              <CorneringRunner exp={exp} report={comparison!} notify={notify} onOpenMethod={() => setEditingMethod(true)} />
+              <CorneringRunner exp={exp} report={comparison!} onOpenMethod={() => setEditingMethod(true)} />
               {exp.trials.length > 0 && (
                 <div className="grid gap-4 lg:grid-cols-2">
                   <div className="overflow-x-auto">
