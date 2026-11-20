@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { checkStageCompletion } from './rules';
-import { evaluateComparison, validateVariableRoles } from './comparison';
+import { checkFindingEvidence, evaluateComparison, validateVariableRoles } from './comparison';
 import { corneringVariables } from '@/data/variables';
 import { computeCorneringRun } from '@/engine';
+import { fmtNum, readParam, sanitizeExperiment, trialInvalidReason } from '@/data/integrity';
 import type { Experiment, Trial } from '@/data/schema';
 
 const mkTrial = (index: number, speedKmh: number, radiusM: number, mu = 1): Trial => {
@@ -129,6 +130,101 @@ describe('案例四：半径作为自变量，v=54、μ=1，R=30/40/50', () => {
     const r2 = evaluateComparison(mixed);
     expect(r2.evaluations[1].confounded.map((c) => c.key)).toEqual(['speedKmh']);
     expect(r2.evaluations[1].reasons[0]).toContain('改变了车速 v');
+  });
+});
+
+describe('FIX-01：关键参数完整性与基准选择', () => {
+  const drop = (t: Trial, key: string): Trial => {
+    const params = { ...t.params } as Record<string, number>;
+    delete params[key];
+    return { ...t, params };
+  };
+
+  it.each(['speedKmh', 'radiusM', 'mu'])('A/B/C：基准候选缺 %s → 不得作基准，改选后续合法记录', (key) => {
+    const exp = mkExp([drop(mkTrial(1, 54, 50), key), mkTrial(2, 72, 50), mkTrial(3, 90, 50)]);
+    const report = evaluateComparison(exp);
+    expect(report.evaluations[0].usable).toBe(false);
+    expect(report.evaluations[0].reasons.join()).toContain(key);
+    expect(report.baseline?.id).toBe('t2');
+    expect(report.counts.eligible).toBe(2);
+    expect(report.counts.distinct).toBe(2);
+    expect(report.collectReady).toBe(false);
+    expect(checkStageCompletion(exp, 'collect').ok).toBe(false);
+  });
+
+  it.each(['speedKmh', 'radiusM', 'mu'])('D：候选缺 %s → 保留记录、标记不合格、点名缺失字段', (key) => {
+    const exp = mkExp([mkTrial(1, 54, 50), drop(mkTrial(2, 72, 50), key), mkTrial(3, 90, 50)]);
+    const report = evaluateComparison(exp);
+    expect(exp.trials).toHaveLength(3);
+    const e2 = report.evaluations[1];
+    expect(e2.eligible).toBe(false);
+    expect(e2.reasons.join()).toContain(`缺少关键参数`);
+    expect(e2.reasons.join()).toContain(key);
+    expect(report.eligible.map((t) => t.id)).toEqual(['t1', 't3']);
+    expect(report.distinctValues).toEqual([54, 90]);
+    expect(report.collectReady).toBe(false);
+  });
+
+  it.each([
+    ['null', null],
+    ['undefined', undefined],
+    ['NaN', Number.NaN],
+    ['Infinity', Infinity],
+    ['字符串', '54'],
+  ])('E：mu 为 %s → 记录无效', (_label, value) => {
+    const bad = { ...mkTrial(2, 72, 50), params: { speedKmh: 72, radiusM: 50, mu: value as number } };
+    expect(trialInvalidReason(bad)).not.toBeNull();
+    const exp = mkExp([mkTrial(1, 54, 50), bad]);
+    expect(evaluateComparison(exp).eligible.map((t) => t.id)).toEqual(['t1']);
+  });
+
+  it.each([
+    ['speedKmh', -5, '车速不得为负数'],
+    ['radiusM', 0, '弯道半径必须大于 0'],
+    ['mu', 0, '附着系数必须大于 0'],
+  ])('E：域非法 %s=%s → 拒绝', (key, value, message) => {
+    const bad = { ...mkTrial(2, 72, 50), params: { speedKmh: 72, radiusM: 50, mu: 1, [key]: value } };
+    expect(trialInvalidReason(bad)).toBe(message);
+  });
+
+  it('F：无完整合法基准 → 无法构建对照且禁止推进', () => {
+    const exp = mkExp([drop(mkTrial(1, 54, 50), 'mu'), drop(mkTrial(2, 72, 50), 'mu'), drop(mkTrial(3, 90, 50), 'mu')]);
+    const report = evaluateComparison(exp);
+    expect(report.baseline).toBeNull();
+    expect(report.counts.eligible).toBe(0);
+    expect(report.feedback.some((f) => f.code === 'F')).toBe(true);
+    expect(report.collectMissing.join()).toContain('无法构建有效对照');
+    expect(checkStageCompletion(exp, 'collect').ok).toBe(false);
+  });
+
+  it('I：缺参记录不能作为研究发现的有效证据', () => {
+    const exp = mkExp([mkTrial(1, 54, 50), drop(mkTrial(2, 72, 50), 'radiusM'), mkTrial(3, 90, 50)]);
+    const report = evaluateComparison(exp);
+    const check = checkFindingEvidence(report, {
+      id: 'f-x',
+      observation: '车速提高时侧向加速度按平方增长。',
+      evidenceTrialIds: ['t1', 't2'],
+      supportsHypothesis: true,
+    });
+    expect(check.ok).toBe(false);
+    expect(check.problems.join()).toContain('t2');
+  });
+
+  it('J：读取清洗保留缺参记录并标记 invalid，展示安全', () => {
+    const bad = drop(mkTrial(2, 72, 50), 'mu');
+    const out = sanitizeExperiment(mkExp([mkTrial(1, 54, 50), bad]));
+    expect(out?.trials).toHaveLength(2);
+    expect(out?.trials[1].status).toBe('invalid');
+    expect(out?.trials[1].invalidReason).toContain('mu');
+    expect(out?.trials[1].params).toEqual(bad.params);
+    expect(fmtNum(readParam(out?.trials[1], 'mu'))).toBe('非有限');
+    expect(out?.stages.collect).toBe('active');
+  });
+
+  it('G 回归：标准三组仍合格且基准为第一条', () => {
+    const report = evaluateComparison(mkExp([mkTrial(1, 54, 50), mkTrial(2, 72, 50), mkTrial(3, 90, 50)]));
+    expect(report.baseline?.id).toBe('t1');
+    expect(report.collectReady).toBe(true);
   });
 });
 

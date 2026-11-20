@@ -45,7 +45,14 @@ const exp: Experiment = {
   },
   variables: corneringVariables('speedKmh'),
   variablesVersion: 2,
-  trials: [mkTrial(1, 54, 50), mkTrial(2, 54, 50), mkTrial(3, 72, 60), mkTrial(4, 72, 50), mkTrial(5, 90, 50)],
+  trials: [
+    mkTrial(1, 54, 50),
+    mkTrial(2, 54, 50),
+    mkTrial(3, 72, 60),
+    mkTrial(4, 72, 50),
+    mkTrial(5, 90, 50),
+    { ...mkTrial(6, 60, 50), params: { speedKmh: 60, radiusM: 50 } as Trial['params'], note: 'FIX-01 样例：缺失 mu 的历史记录' },
+  ],
   analysis: {
     id: 'ana-sample',
     method: '绘制 ay–v 对照曲线（水平汇总 n=样本数）并比较水平间差异',

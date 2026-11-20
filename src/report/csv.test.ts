@@ -141,6 +141,20 @@ describe('CSV 导出（T05）', () => {
     expect(cells[3]).toBe('40');
   });
 
+  it('H：缺参记录保留于原始 CSV 并标记原因，合格 CSV 不包含', () => {
+    const missingMu = { ...mkTrial(6, 72, 50), params: { speedKmh: 72, radiusM: 50 } as Trial['params'] };
+    const expM = mkExp([...trials.slice(0, 5), missingMu]);
+    const repM = evaluateComparison(expM);
+    const raw = buildExperimentCsv(expM, repM, 'raw').slice(1).trim().split('\r\n');
+    const row = raw.find((l) => l.startsWith('trial-6,'))!;
+    expect(row).toContain(',否,');
+    expect(row.split(',').slice(15).join(',')).toContain('缺少关键参数');
+    expect(row.split(',').slice(15).join(',')).toContain('mu');
+    const elig = buildExperimentCsv(expM, repM, 'eligible').slice(1).trim().split('\r\n');
+    expect(elig.some((l) => l.startsWith('trial-6,'))).toBe(false);
+    expect(repM.eligible.map((t) => t.id)).not.toContain('trial-6');
+  });
+
   it('每行都带试跑 ID 与时间戳', () => {
     const lines = buildExperimentCsv(exp, report, 'raw').slice(1).trim().split('\r\n').slice(1);
     for (const l of lines) {

@@ -4,7 +4,7 @@
  * 原则：无效记录保留原值并标记 invalid，不删除、不参与有效计数与图表。
  */
 import type { Experiment, ReportDoc, StageId, StageStatus, Trial } from './schema';
-import { normalizeCorneringVariables } from './variables';
+import { normalizeCorneringVariables, CORNERING_PARAM_KEYS } from './variables';
 import { SEED_BRAKING_DATA_SOURCE_NOTE } from './seed';
 
 export const isFiniteNumber = (v: unknown): v is number =>
@@ -72,6 +72,18 @@ export function trialInvalidReason(t: unknown): string | null {
   if (!isFiniteNumber(tr.index)) return '试跑序号非有限数字';
   if (typeof tr.createdAt !== 'string' || tr.createdAt === '') return '缺少试跑时间戳';
   if (!isFiniteRecord(tr.params)) return '参数结构非法或含非有限数值（null / 数组 / NaN / Infinity）';
+  // FIX-01：过弯形状记录（含 speedKmh 或 radiusM 键）必须三关键参数齐全、类型正确、有限且域合法；
+  // 不得以默认值 / 空值转 0 / 计算结果反推缺失的原始输入。制动记录（v0/mu/mass）不受此约束。
+  const params = tr.params as Record<string, unknown>;
+  if ('speedKmh' in params || 'radiusM' in params) {
+    const missingKeys = CORNERING_PARAM_KEYS.filter((k) => !isFiniteNumber(params[k]));
+    if (missingKeys.length > 0) {
+      return `缺少关键参数：${missingKeys.join('、')}（原始输入缺失，不得推断补造）`;
+    }
+    if ((params.speedKmh as number) < 0) return '车速不得为负数';
+    if ((params.radiusM as number) <= 0) return '弯道半径必须大于 0';
+    if ((params.mu as number) <= 0) return '附着系数必须大于 0';
+  }
   if (!isFiniteRecord(tr.metrics)) return '指标结构非法或含非有限数值（null / 数组 / NaN / Infinity）';
   const missing = requiredMetricKeys(tr.params).filter((k) => !isFiniteNumber(readMetric(tr, k)));
   if (missing.length > 0) return `缺少必要计算字段：${missing.join('、')}`;

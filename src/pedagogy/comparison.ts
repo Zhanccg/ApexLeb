@@ -30,7 +30,7 @@ export interface TrialEvaluation {
 }
 
 export interface MethodFeedback {
-  code: 'A' | 'B' | 'C' | 'D' | 'E';
+  code: 'A' | 'B' | 'C' | 'D' | 'E' | 'F';
   tone: 'danger' | 'warn' | 'ok';
   text: string;
 }
@@ -113,6 +113,8 @@ export function evaluateComparison(exp: Experiment): ComparisonReport {
 
   const ordered = [...exp.trials].sort((a, b) => a.index - b.index);
   const usable = ordered.filter(isUsableTrial);
+  // FIX-01 基准选择规则：按序号取第一条「关键参数齐全且合法」的有效试跑；
+  // 缺参 / 非法记录一律不得作为基准（isUsableTrial 已含完整性与域校验）。
   const baseline = usable[0] ?? null;
 
   const evaluations: TrialEvaluation[] = ordered.map((trial) => {
@@ -204,6 +206,13 @@ export function evaluateComparison(exp: Experiment): ComparisonReport {
       text: `当前只有${counts.distinct}个不同的自变量取值，还需要至少${MIN_DISTINCT_LEVELS - counts.distinct}个不同取值才能完成对照实验。重复试跑可以保存（用于验证稳定性），但请改变${independent?.name ?? '自变量'}再运行新的试跑。`,
     });
   }
+  if (schemeOk && usable.length === 0) {
+    feedback.push({
+      code: 'F',
+      tone: 'danger',
+      text: '没有完整合法的基准试跑：全部试跑缺少关键参数（speedKmh / radiusM / mu）或数据无效，无法构建有效对照。请运行参数齐全的新试跑，缺失字段不会被自动补造。',
+    });
+  }
   const collectReady = schemeOk && counts.distinct >= MIN_DISTINCT_LEVELS && counts.eligible >= MIN_ELIGIBLE_TRIALS;
   if (collectReady) {
     feedback.push({
@@ -215,6 +224,9 @@ export function evaluateComparison(exp: Experiment): ComparisonReport {
 
   const collectMissing: string[] = [];
   if (!schemeOk) collectMissing.push(...roleIssues);
+  if (schemeOk && !baseline) {
+    collectMissing.push('无完整合法基准试跑：无法构建有效对照（需至少一条 v/R/μ 齐全、有限且域合法的有效试跑）');
+  }
   if (counts.distinct < MIN_DISTINCT_LEVELS) {
     collectMissing.push(`不同自变量取值仅 ${counts.distinct} 个（需 ≥ ${MIN_DISTINCT_LEVELS}）：请改变${independent?.name ?? '自变量'}取值后运行新试跑`);
   }

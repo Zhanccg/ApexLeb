@@ -9,7 +9,7 @@ const TONE_STYLE = {
   ok: 'border-tele-500/40 bg-tele-500/10 text-tele-300',
 } as const;
 
-const CODE_LABEL = { A: '缺少自变量', B: '角色不合法', C: '混杂变量', D: '重复取值', E: '对照达标' } as const;
+const CODE_LABEL = { A: '缺少自变量', B: '角色不合法', C: '混杂变量', D: '重复取值', E: '对照达标', F: '基准缺失' } as const;
 
 export default function MethodCoach({ exp, report }: { exp: Experiment; report: ComparisonReport }) {
   const { counts, baseline, independent, controlled } = report;
@@ -49,8 +49,8 @@ export default function MethodCoach({ exp, report }: { exp: Experiment; report: 
           </span>
         ))}
         {baseline && (
-          <span className="num ml-auto text-[10px] text-mist-500">
-            基准试跑 #{String(baseline.index).padStart(2, '0')}：v={fmtNum(readParam(baseline, 'speedKmh'), 0)} km/h · R={fmtNum(readParam(baseline, 'radiusM'), 0)} m · μ={fmtNum(readParam(baseline, 'mu'))}
+          <span className="num ml-auto text-[10px] text-mist-500" title={baseline.id}>
+            基准试跑 #{String(baseline.index).padStart(2, '0')}（{baseline.id}）：v={fmtNum(readParam(baseline, 'speedKmh'), 0)} km/h · R={fmtNum(readParam(baseline, 'radiusM'), 0)} m · μ={fmtNum(readParam(baseline, 'mu'))}
           </span>
         )}
       </div>

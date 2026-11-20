@@ -6,7 +6,7 @@
  */
 import type { Experiment } from '@/data/schema';
 import type { ComparisonReport } from '@/pedagogy';
-import { readMetric, readParam } from '@/data/integrity';
+import { readMetric, readParam, trialInvalidReason } from '@/data/integrity';
 
 export type CsvScope = 'raw' | 'eligible';
 
@@ -42,7 +42,7 @@ const raw = (v: number | undefined): string => (v === undefined ? '' : String(v)
 
 /** 不合格 / 无效原因：统一取自 evaluateComparison 的 evaluations，与页面判定同口径 */
 function exclusionReason(e: ComparisonReport['evaluations'][number]): string {
-  if (!e.usable) return e.trial.invalidReason ?? '记录无效或结构损坏';
+  if (!e.usable) return e.trial.invalidReason ?? trialInvalidReason(e.trial) ?? '记录无效或结构损坏';
   if (e.confounded.length > 0) {
     return `混杂：${e.confounded.map((c) => `${c.name} ${c.symbol} 由基准 ${c.from} 变为 ${c.to}`).join('；')}`;
   }
