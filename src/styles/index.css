@@ -1,0 +1,147 @@
+@import 'tailwindcss';
+
+@theme {
+  /* 碳纤维基底 */
+  --color-carbon-950: #05070b;
+  --color-carbon-900: #090d13;
+  --color-carbon-850: #0d1219;
+  --color-carbon-800: #111823;
+  --color-carbon-700: #1a2330;
+  --color-carbon-600: #273344;
+  --color-line: #1c2634;
+  --color-line-bright: #2c3a4e;
+
+  /* 赛车红 — 主品牌色 */
+  --color-race-600: #b00500;
+  --color-race-500: #e10600;
+  --color-race-400: #ff3b2e;
+
+  /* 遥测青 — 数据主色 */
+  --color-tele-500: #00b3a2;
+  --color-tele-400: #00d2be;
+  --color-tele-300: #5ce8d8;
+
+  /* 信号色 */
+  --color-signal-amber: #ffb800;
+  --color-signal-lime: #a3e635;
+  --color-signal-ice: #4cc3ff;
+  --color-signal-violet: #a78bfa;
+  --color-signal-magenta: #f471b5;
+
+  /* 中性文本 */
+  --color-mist-100: #eef3f8;
+  --color-mist-300: #c3cedb;
+  --color-mist-500: #8b98a9;
+  --color-mist-600: #647182;
+
+  --font-display: 'Rajdhani', 'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', Consolas, monospace;
+  --font-sans: 'Segoe UI', 'Microsoft YaHei', system-ui, -apple-system, sans-serif;
+}
+
+html {
+  scrollbar-color: var(--color-carbon-600) var(--color-carbon-950);
+}
+
+body {
+  background-color: var(--color-carbon-950);
+  color: var(--color-mist-100);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--color-race-500);
+  color: #fff;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: var(--color-carbon-950);
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--color-carbon-700);
+  border: 2px solid var(--color-carbon-950);
+  border-radius: 6px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--color-tele-500);
+}
+
+@utility panel {
+  background: linear-gradient(160deg, var(--color-carbon-850), var(--color-carbon-900));
+  border: 1px solid var(--color-line);
+  border-radius: 10px;
+}
+
+@utility panel-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  color: var(--color-mist-500);
+}
+
+@utility telemetry-grid {
+  background-image:
+    linear-gradient(var(--color-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-line) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+@utility num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+@utility race-stripes {
+  background-image: repeating-linear-gradient(
+    -55deg,
+    var(--color-race-500) 0 10px,
+    transparent 10px 22px
+  );
+}
+
+@keyframes led-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px currentColor; }
+  50% { opacity: 0.35; box-shadow: 0 0 1px currentColor; }
+}
+@utility led {
+  animation: led-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes sweep {
+  0% { transform: translateX(-110%); }
+  100% { transform: translateX(360%); }
+}
+@utility sweep-line {
+  animation: sweep 4.5s linear infinite;
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@utility fade-up {
+  animation: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes dash-march {
+  to { stroke-dashoffset: -24; }
+}
+@utility dash-march {
+  animation: dash-march 1.2s linear infinite;
+}
+
+@keyframes trace-in {
+  from { stroke-dashoffset: var(--trace-len, 600); }
+  to { stroke-dashoffset: 0; }
+}
+@utility trace-in {
+  stroke-dasharray: var(--trace-len, 600);
+  animation: trace-in 1.6s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both;
+}

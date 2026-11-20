@@ -1,0 +1,67 @@
+/**
+ * 阶段推进校验规则：科研流程不允许跳步，
+ * 每个阶段必须满足退出条件才能标记完成。
+ */
+import type { Experiment, StageId } from '@/data/schema';
+import { trialInvalidReason } from '@/data/integrity';
+import { STAGE_ORDER } from './stages';
+
+export interface StageCheck {
+  ok: boolean;
+  reason: string;
+}
+
+export function checkStageCompletion(exp: Experiment, stage: StageId): StageCheck {
+  switch (stage) {
+    case 'question':
+      return exp.question.trim().length >= 8
+        ? { ok: true, reason: '研究问题已填写' }
+        : { ok: false, reason: '请先填写不少于 8 个字的研究问题' };
+    case 'hypothesis':
+      return exp.hypothesis && exp.hypothesis.statement.trim().length >= 8 && exp.hypothesis.rationale.trim().length > 0
+        ? { ok: true, reason: '假设与依据已记录' }
+        : { ok: false, reason: '需要假设陈述与物理依据' };
+    case 'design': {
+      const roles = new Set(exp.variables.map((v) => v.role));
+      const ok = roles.has('independent') && roles.has('dependent') && roles.has('controlled');
+      return ok
+        ? { ok: true, reason: '变量表完整' }
+        : { ok: false, reason: '变量表需同时包含自变量、因变量与控制变量' };
+    }
+    case 'collect': {
+      const done = exp.trials.filter((t) => t.status === 'completed' && trialInvalidReason(t) === null).length;
+      return done >= 3
+        ? { ok: true, reason: `已完成 ${done} 次试跑` }
+        : { ok: false, reason: `至少需要 3 次完成的试跑（当前 ${done} 次）` };
+    }
+    case 'analyze':
+      return exp.analysis && exp.analysis.findings.length > 0
+        ? { ok: true, reason: '已有分析发现' }
+        : { ok: false, reason: '需要至少一条分析发现' };
+    case 'conclude':
+      return exp.conclusion && exp.conclusion.statement.trim().length >= 8
+        ? { ok: true, reason: '结论已记录' }
+        : { ok: false, reason: '需要结论陈述与假设判定' };
+    case 'report':
+      return { ok: false, reason: '请在报告中心生成实验报告' };
+  }
+}
+
+/** 当前应处的阶段：第一个未完成的阶段 */
+export function currentStage(exp: Experiment): StageId {
+  for (const id of STAGE_ORDER) {
+    if (exp.stages[id] !== 'done') return id;
+  }
+  return 'report';
+}
+
+export function stageProgress(exp: Experiment): number {
+  const done = STAGE_ORDER.filter((id) => exp.stages[id] === 'done').length;
+  return done / STAGE_ORDER.length;
+}
+
+/** 只有前序阶段全部完成，才允许推进目标阶段 */
+export function canAdvanceTo(exp: Experiment, stage: StageId): boolean {
+  const idx = STAGE_ORDER.indexOf(stage);
+  return STAGE_ORDER.slice(0, idx).every((id) => exp.stages[id] === 'done');
+}
