@@ -147,3 +147,30 @@ describe('结论阶段证据与局限校验（T06）', () => {
     expect(checkStageCompletion(braking, 'conclude').ok).toBe(true);
   });
 });
+
+describe('FIX-02：空局限性历史结论的恢复与补填', () => {
+  const legacyConclusion = { statement: '在 R=50 m、μ=1 条件下 ay 与 v² 成正比，假设被支持。', hypothesisVerdict: 'supported' as const, limitations: '', createdAt: 'x' };
+
+  it('E：历史空局限性结论读取后保留内容与阶段，且复核不通过', () => {
+    const exp = { ...mkExp(standard, analysis(['trial-1'])), conclusion: legacyConclusion, stages: { ...mkExp(standard, null).stages, conclude: 'done' as const, analyze: 'done' as const } };
+    const out = sanitizeExperiment(exp);
+    expect(out?.conclusion?.statement).toBe(legacyConclusion.statement);
+    expect(out?.conclusion?.hypothesisVerdict).toBe('supported');
+    expect(out?.stages.conclude).toBe('done');
+    expect(checkStageCompletion(out!, 'conclude').ok).toBe(false);
+  });
+  it('C：纯空格局限性视为未填写', () => {
+    const exp = { ...mkExp(standard, analysis(['trial-1'])), conclusion: { ...legacyConclusion, limitations: ' \t ' } };
+    expect(checkStageCompletion(exp, 'conclude').ok).toBe(false);
+  });
+  it('F：补填局限后复核通过可推进', () => {
+    const exp = { ...mkExp(standard, analysis(['trial-1'])), conclusion: { ...legacyConclusion, limitations: '简化质点模型，未含轮胎非线性与气动。' } };
+    expect(checkStageCompletion(exp, 'conclude').ok).toBe(true);
+  });
+  it('D：null / undefined 局限性同样视为缺口', () => {
+    for (const lim of [null, undefined]) {
+      const exp = { ...mkExp(standard, analysis(['trial-1'])), conclusion: { ...legacyConclusion, limitations: lim as unknown as string } };
+      expect(checkStageCompletion(exp, 'conclude').ok).toBe(false);
+    }
+  });
+});

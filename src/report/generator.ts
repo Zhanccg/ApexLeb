@@ -24,9 +24,13 @@ const DATA_SOURCE_BASE = '本实验数据由简化物理模型计算生成，不
 
 /** 生成前的证据复核：引用失效 / 缺少发现时禁止产出误导性新报告（T06） */
 export function reportEvidenceBlockers(exp: Experiment): string[] {
-  if (exp.category !== 'cornering') return [];
-  const report = evaluateComparison(exp);
   const problems: string[] = [];
+  // FIX-02：结论必填缺口（含历史空局限性）不得包装为通过复核的新报告
+  if (!exp.conclusion || (exp.conclusion.statement?.trim().length ?? 0) < 8 || !exp.conclusion.limitations?.trim()) {
+    problems.push('结论必填缺口：请在结论阶段补充结论陈述与模型局限性后重新保存');
+  }
+  if (exp.category !== 'cornering') return problems;
+  const report = evaluateComparison(exp);
   if (!exp.analysis || exp.analysis.findings.length === 0) {
     problems.push('缺少研究发现：请先在分析工作台保存带证据的研究发现');
     return problems;

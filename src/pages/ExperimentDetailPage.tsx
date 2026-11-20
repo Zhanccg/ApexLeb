@@ -40,6 +40,18 @@ export default function ExperimentDetailPage() {
     hypothesisVerdict: 'supported',
     limitations: '',
   });
+  const [editingConclusion, setEditingConclusion] = useState(false);
+  const [conclusionErrors, setConclusionErrors] = useState<{ statement?: string; limitations?: string }>({});
+
+  const openConclusionEdit = () => {
+    setConclusionDraft({
+      statement: exp?.conclusion?.statement ?? '',
+      hypothesisVerdict: exp?.conclusion?.hypothesisVerdict ?? 'supported',
+      limitations: exp?.conclusion?.limitations ?? '',
+    });
+    setConclusionErrors({});
+    setEditingConclusion(true);
+  };
 
   const notify = (message: string, tone: 'ok' | 'err') => {
     setToast({ message, tone });
@@ -515,58 +527,116 @@ export default function ExperimentDetailPage() {
               {exp.analysis?.limitations && <p className="text-mist-600">模型局限（分析阶段）：{exp.analysis.limitations}</p>}
             </div>
           )}
-          {exp.conclusion ? (
-            <div className="space-y-2.5 text-sm">
-              <p className="leading-relaxed text-mist-300">{exp.conclusion.statement}</p>
-              <p className="text-xs font-bold">
-                {{ supported: <span className="text-tele-300">✅ 假设被数据支持</span>, rejected: <span className="text-race-400">❌ 假设被数据拒绝</span>, inconclusive: <span className="text-signal-amber">⚠️ 证据不足</span> }[exp.conclusion.hypothesisVerdict]}
-              </p>
-              {exp.conclusion.limitations && (
-                <p className="rounded border border-line bg-carbon-900/70 p-2.5 text-xs leading-relaxed text-mist-500">
-                  <span className="font-bold text-mist-300">局限：</span>{exp.conclusion.limitations}
-                </p>
+          {exp.stages.conclude === 'locked' ? (
+            <EmptyState icon="🔒" title="结论阶段未解锁" hint="完成数据采集与分析后，才能进入结论阶段——科研流程不允许跳步。" />
+          ) : (
+            <div className="space-y-3">
+              {exp.conclusion && !editingConclusion && (
+                <div className="space-y-2.5 text-sm">
+                  <p className="leading-relaxed text-mist-300">{exp.conclusion.statement}</p>
+                  <p className="text-xs font-bold">
+                    {{ supported: <span className="text-tele-300">✅ 假设被数据支持</span>, rejected: <span className="text-race-400">❌ 假设被数据拒绝</span>, inconclusive: <span className="text-signal-amber">⚠️ 证据不足</span> }[exp.conclusion.hypothesisVerdict]}
+                  </p>
+                  {exp.conclusion.limitations?.trim() ? (
+                    <p className="rounded border border-line bg-carbon-900/70 p-2.5 text-xs leading-relaxed text-mist-500">
+                      <span className="font-bold text-mist-300">局限：</span>{exp.conclusion.limitations}
+                    </p>
+                  ) : (
+                    <p role="alert" className="rounded border border-signal-amber/50 bg-signal-amber/10 p-2.5 text-xs leading-relaxed text-signal-amber">
+                      ⚠ 结论存在必填缺口：模型局限性未填写。请编辑结论补充（例如未考虑空气动力学或轮胎非线性特性）；
+                      不完整结论无法通过报告复核，历史阶段标记保留不变。
+                    </p>
+                  )}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button variant="ghost" onClick={openConclusionEdit}>编辑结论</Button>
+                    <span className="text-[11px] text-mist-600">已保存的结论可随时重新编辑，不会因保存过而锁定。</span>
+                  </div>
+                </div>
+              )}
+              {(editingConclusion || !exp.conclusion) && (
+                <form
+                  className="space-y-3"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const errs: { statement?: string; limitations?: string } = {};
+                    if (conclusionDraft.statement.trim().length < 8) {
+                      errs.statement = '结论陈述至少 8 个字，需回答最初的研究问题。';
+                    }
+                    if (!conclusionDraft.limitations.trim()) {
+                      errs.limitations = '请补充本次实验所用简化物理模型的局限性，例如未考虑空气动力学或轮胎非线性特性。';
+                    }
+                    if (errs.statement || errs.limitations) {
+                      setConclusionErrors(errs);
+                      notify(errs.limitations ?? errs.statement ?? '请补全结论必填字段', 'err');
+                      return;
+                    }
+                    setConclusionErrors({});
+                    setConclusion(exp.id, {
+                      statement: conclusionDraft.statement.trim(),
+                      hypothesisVerdict: conclusionDraft.hypothesisVerdict,
+                      limitations: conclusionDraft.limitations.trim(),
+                    });
+                    setEditingConclusion(false);
+                    notify('结论已保存：可在阶段追踪器标记「得出结论」完成', 'ok');
+                  }}
+                >
+                  <div>
+                    <textarea
+                      value={conclusionDraft.statement}
+                      onChange={(e) => {
+                        setConclusionDraft({ ...conclusionDraft, statement: e.target.value });
+                        if (conclusionErrors.statement) setConclusionErrors({ ...conclusionErrors, statement: undefined });
+                      }}
+                      rows={3}
+                      aria-label="研究结论"
+                      aria-invalid={Boolean(conclusionErrors.statement)}
+                      placeholder="回答最初的研究问题，例如：在 R=50 m、μ=1 条件下，侧向加速度与车速平方成正比…"
+                      className={`w-full rounded border bg-carbon-900 p-3 text-sm text-mist-100 placeholder:text-mist-600 focus:border-tele-500/60 focus:outline-none ${conclusionErrors.statement ? 'border-race-500/70' : 'border-line'}`}
+                    />
+                    {conclusionErrors.statement && (
+                      <p role="alert" className="mt-1 text-[11px] font-semibold text-race-400">✕ {conclusionErrors.statement}</p>
+                    )}
+                  </div>
+                  <select
+                    value={conclusionDraft.hypothesisVerdict}
+                    onChange={(e) => setConclusionDraft({ ...conclusionDraft, hypothesisVerdict: e.target.value as Conclusion['hypothesisVerdict'] })}
+                    aria-label="假设判断"
+                    className="w-full cursor-pointer rounded border border-line bg-carbon-900 px-3 py-2 text-sm text-mist-300 focus:border-tele-500/60 focus:outline-none"
+                  >
+                    <option value="supported">假设被数据支持</option>
+                    <option value="rejected">假设被数据拒绝</option>
+                    <option value="inconclusive">证据不足，无法判定</option>
+                  </select>
+                  <div>
+                    <textarea
+                      value={conclusionDraft.limitations}
+                      onChange={(e) => {
+                        setConclusionDraft({ ...conclusionDraft, limitations: e.target.value });
+                        if (conclusionErrors.limitations) setConclusionErrors({ ...conclusionErrors, limitations: undefined });
+                      }}
+                      rows={2}
+                      aria-label="模型局限性"
+                      aria-invalid={Boolean(conclusionErrors.limitations)}
+                      placeholder="模型局限与适用范围（必填）：例如简化质点模型未含轮胎特性、空气动力与载荷转移…"
+                      className={`w-full rounded border bg-carbon-900 p-3 text-sm text-mist-100 placeholder:text-mist-600 focus:border-tele-500/60 focus:outline-none ${conclusionErrors.limitations ? 'border-race-500/70' : 'border-line'}`}
+                    />
+                    {conclusionErrors.limitations && (
+                      <p role="alert" className="mt-1 text-[11px] font-semibold leading-relaxed text-race-400">✕ {conclusionErrors.limitations}</p>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button type="submit" variant="tele">保存结论</Button>
+                    {exp.conclusion && (
+                      <Button variant="ghost" onClick={() => { setEditingConclusion(false); setConclusionErrors({}); }}>取消编辑</Button>
+                    )}
+                  </div>
+                  <p className="text-[10px] leading-relaxed text-mist-600">
+                    「保存结论」仅记录内容；「得出结论」阶段完成另需必填字段齐全与证据复核通过（见阶段追踪器退出条件）。
+                    保存失败不会清空已填写的其他字段。
+                  </p>
+                </form>
               )}
             </div>
-          ) : exp.stages.conclude === 'active' ? (
-            <form
-              className="space-y-3"
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (conclusionDraft.statement.trim().length < 8) {
-                  notify('结论陈述至少 8 个字', 'err');
-                  return;
-                }
-                setConclusion(exp.id, conclusionDraft);
-                notify('结论已记录，可标记阶段完成', 'ok');
-              }}
-            >
-              <textarea
-                value={conclusionDraft.statement}
-                onChange={(e) => setConclusionDraft({ ...conclusionDraft, statement: e.target.value })}
-                rows={3}
-                placeholder="回答最初的研究问题，例如：在 100 km/h 初速度下，制动距离与摩擦系数成反比…"
-                className="w-full rounded border border-line bg-carbon-900 p-3 text-sm text-mist-100 placeholder:text-mist-600 focus:border-tele-500/60 focus:outline-none"
-              />
-              <select
-                value={conclusionDraft.hypothesisVerdict}
-                onChange={(e) => setConclusionDraft({ ...conclusionDraft, hypothesisVerdict: e.target.value as Conclusion['hypothesisVerdict'] })}
-                className="w-full cursor-pointer rounded border border-line bg-carbon-900 px-3 py-2 text-sm text-mist-300 focus:border-tele-500/60 focus:outline-none"
-              >
-                <option value="supported">假设被数据支持</option>
-                <option value="rejected">假设被数据拒绝</option>
-                <option value="inconclusive">证据不足，无法判定</option>
-              </select>
-              <textarea
-                value={conclusionDraft.limitations}
-                onChange={(e) => setConclusionDraft({ ...conclusionDraft, limitations: e.target.value })}
-                rows={2}
-                placeholder="局限与适用范围（模型简化、取值范围等）"
-                className="w-full rounded border border-line bg-carbon-900 p-3 text-sm text-mist-100 placeholder:text-mist-600 focus:border-tele-500/60 focus:outline-none"
-              />
-              <Button type="submit" variant="tele">保存结论</Button>
-            </form>
-          ) : (
-            <EmptyState icon="🔒" title="结论阶段未解锁" hint="完成数据采集与分析后，才能进入结论阶段——科研流程不允许跳步。" />
           )}
         </Panel>
       </div>

@@ -65,10 +65,10 @@ export function checkStageCompletion(exp: Experiment, stage: StageId): StageChec
         : { ok: false, reason: '需要至少一条分析发现' };
     }
     case 'conclude': {
-      if (!exp.conclusion || exp.conclusion.statement.trim().length < 8) {
+      if (!exp.conclusion || (exp.conclusion.statement?.trim().length ?? 0) < 8) {
         return { ok: false, reason: '需要不少于 8 个字的结论陈述' };
       }
-      if (!exp.conclusion.limitations.trim()) {
+      if (!exp.conclusion.limitations?.trim()) {
         return { ok: false, reason: '请填写模型局限性（简化模型假设与适用范围）后才能完成结论阶段' };
       }
       if (exp.category === 'cornering') {

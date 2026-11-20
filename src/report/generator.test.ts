@@ -145,6 +145,16 @@ describe('T06 报告证据链与数据一致性', () => {
     expect(reportEvidenceBlockers(braking)).toEqual([]);
   });
 
+  it('FIX-02：历史空局限性结论 → 报告复核拦截并提示补填', () => {
+    const exp = mkExp(standard, {
+      conclusion: { statement: '在 R=50 m、μ=1 条件下 ay 与 v² 成正比。', hypothesisVerdict: 'supported', limitations: '   ', createdAt: 'x' },
+      stages: { question: 'done', hypothesis: 'done', design: 'done', collect: 'done', analyze: 'done', conclude: 'done', report: 'active' },
+    });
+    const blockers = reportEvidenceBlockers(exp);
+    expect(blockers.join()).toContain('结论必填缺口');
+    expect(blockers.join()).toContain('模型局限性');
+  });
+
   it('generateReport 标记 report 阶段完成且标题规范', () => {
     const doc = generateReport(mkExp(standard));
     expect(doc.title).toBe('研究报告：车速与侧向加速度');
