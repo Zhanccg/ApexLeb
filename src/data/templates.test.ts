@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { TEMPLATES } from './templates';
+import { TEMPLATES, experimentFlowStatus } from './templates';
 import { buildSeedExperiments } from './seed';
+import type { Experiment } from './schema';
 
 describe('UX-01 模板可用状态', () => {
   it('过弯模板为唯一完整流程模板', () => {
@@ -26,5 +27,38 @@ describe('UX-01 模板可用状态', () => {
     const braking = seeds.find((e) => e.id === 'exp-braking-mu');
     expect(braking?.dataSourceNote).toContain('人为扰动');
     expect(braking?.trials.length).toBeGreaterThan(0);
+  });
+});
+
+describe('UX-02 实验可用状态唯一出口', () => {
+  const base = {
+    id: 'e-x',
+    title: 't',
+    question: 'q',
+    hypothesis: null,
+    variables: [],
+    trials: [],
+    analysis: null,
+    conclusion: null,
+    stages: { question: 'active', hypothesis: 'locked', design: 'locked', collect: 'locked', analyze: 'locked', conclude: 'locked', report: 'locked' },
+    tags: [],
+    createdAt: 'x',
+    updatedAt: 'x',
+  } as unknown as Experiment;
+
+  it('预置示例优先于类别判定', () => {
+    expect(experimentFlowStatus({ ...base, category: 'braking', dataSourceNote: '预置教学示例' }).key).toBe('preset');
+  });
+  it('过弯（含已完成闭环）为完整流程', () => {
+    expect(experimentFlowStatus({ ...base, category: 'cornering' }).label).toBe('完整流程');
+    expect(experimentFlowStatus({ ...base, category: 'cornering', stages: { ...base.stages, report: 'done' } }).key).toBe('full');
+  });
+  it('历史气动实验标注运行器未接入', () => {
+    expect(experimentFlowStatus({ ...base, category: 'aero' }).label).toBe('运行器未接入');
+  });
+  it('与实验库徽章共用同一函数（无第二套逻辑）', () => {
+    const seeds = buildSeedExperiments();
+    expect(experimentFlowStatus(seeds.find((e) => e.id === 'exp-braking-mu')!).key).toBe('preset');
+    expect(experimentFlowStatus(seeds.find((e) => e.category === 'cornering')!).key).toBe('full');
   });
 });

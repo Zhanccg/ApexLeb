@@ -23,14 +23,16 @@ export function Panel({
   right,
   children,
   className = '',
+  id,
 }: {
   title?: string;
   right?: ReactNode;
   children: ReactNode;
   className?: string;
+  id?: string;
 }) {
   return (
-    <section className={`panel overflow-hidden ${className}`}>
+    <section id={id} className={`panel overflow-hidden ${className}`}>
       {title && (
         <header className="flex items-center justify-between gap-3 border-b border-line px-4 py-2.5">
           <h2 className="panel-title flex items-center gap-2">

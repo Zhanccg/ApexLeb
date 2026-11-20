@@ -22,12 +22,15 @@ export default function CorneringRunner({
   exp,
   report,
   notify,
+  onOpenMethod,
 }: {
   exp: Experiment;
   report: ComparisonReport;
   notify: (message: string, tone: 'ok' | 'err') => void;
+  onOpenMethod?: () => void;
 }) {
   const addTrial = useLabStore((s) => s.addTrial);
+  const completeStage = useLabStore((s) => s.completeStage);
   const [raw, setRaw] = useState<Record<keyof CorneringParams, string>>({
     speedKmh: '54',
     radiusM: '50',
@@ -35,6 +38,7 @@ export default function CorneringRunner({
   });
   const [errors, setErrors] = useState<Partial<Record<keyof CorneringParams, string>>>({});
   const [computeError, setComputeError] = useState<string | null>(null);
+  const [lastRunId, setLastRunId] = useState<string | null>(null);
 
   const completed = exp.trials.filter(isUsableTrial);
   const invalidCount = exp.trials.length - completed.length;
@@ -94,6 +98,7 @@ export default function CorneringRunner({
       notify('试跑未保存：实验不存在或记录含非有限数值', 'err');
       return;
     }
+    setLastRunId(trial.id);
     notify(
       `试跑 ${String(trial.index).padStart(2, '0')} 已保存：ay = ${res.lateralAccelMs2.toFixed(2)} m/s²，λ = ${(res.gripUtilization * 100).toFixed(1)}%`,
       'ok',
@@ -101,6 +106,91 @@ export default function CorneringRunner({
   };
 
   const exceeded = latestResult?.status === 'grip-exceeded';
+
+  // UX-02：资格反馈唯一来源 = evaluateComparison 的 evaluations（持久化数据重算，刷新后依然正确）
+  const latestEval = report.evaluations[report.evaluations.length - 1] ?? null;
+  const focusEval = report.evaluations.find((e) => e.trial.id === lastRunId) ?? latestEval;
+  const feedbackKind: 'eligible' | 'replicate' | 'confounded' | 'invalid' | 'scheme' | null = !focusEval
+    ? null
+    : !focusEval.usable
+      ? 'invalid'
+      : focusEval.confounded.length > 0
+        ? 'confounded'
+        : focusEval.replicate
+          ? 'replicate'
+          : focusEval.eligible
+            ? 'eligible'
+            : 'scheme';
+
+  const unitOf = (key: string) => report.controlled.find((v) => v.id === key)?.unit ?? '';
+  const fixControls = () => {
+    if (!focusEval || !report.baseline) return;
+    const next = { ...raw };
+    for (const d of focusEval.confounded) {
+      const base = readParam(report.baseline, d.key);
+      if (base !== undefined) next[d.key as keyof CorneringParams] = String(base);
+    }
+    setRaw(next);
+    setErrors({});
+    notify('控制变量已恢复为基准值，请重新运行试验', 'ok');
+  };
+
+  const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const missingLevels = Math.max(0, 3 - report.counts.distinct);
+  const nextStep: { text: string; action?: { label: string; fn: () => void } } = (() => {
+    if (exp.stages.hypothesis !== 'done') {
+      return { text: '完成研究假设与变量角色设置', action: onOpenMethod ? { label: '打开方法编辑器', fn: onOpenMethod } : undefined };
+    }
+    if (exp.stages.design !== 'done') {
+      return { text: '确认自变量 / 因变量 / 控制变量', action: onOpenMethod ? { label: '确认变量角色', fn: onOpenMethod } : undefined };
+    }
+    if (exp.stages.collect === 'locked') {
+      return { text: '按顺序完成前序阶段以解锁采集', action: { label: '查看阶段追踪器', fn: () => scrollTo('stage-tracker') } };
+    }
+    if (exp.stages.collect === 'active') {
+      if (feedbackKind === 'confounded' && focusEval) {
+        return {
+          text: `恢复 ${focusEval.confounded.map((d) => d.name).join('、')} 至基准值后重新运行`,
+          action: { label: '一键恢复控制变量', fn: fixControls },
+        };
+      }
+      if (!report.collectReady) {
+        return { text: `还差 ${missingLevels} 个不同自变量水平：改变${report.independent?.name ?? '自变量'}取值后运行新试跑` };
+      }
+      return {
+        text: '对照要求已满足：标记「数据采集」完成，进入数据分析',
+        action: {
+          label: '标记采集完成',
+          fn: () => {
+            const r = completeStage(exp.id, 'collect');
+            notify(r.ok ? '采集阶段完成，进入数据分析' : r.reason, r.ok ? 'ok' : 'err');
+          },
+        },
+      };
+    }
+    if (exp.stages.analyze === 'active') {
+      return { text: '进入分析工作台：勾选证据试跑并保存研究发现', action: { label: '前往分析工作台', fn: () => scrollTo('analysis-workbench') } };
+    }
+    if (exp.stages.conclude === 'active') {
+      return { text: '填写研究结论与模型局限性', action: { label: '前往结论', fn: () => scrollTo('conclusion-panel') } };
+    }
+    return { text: '科研闭环已完成：生成并下载研究报告', action: { label: '前往报告面板', fn: () => scrollTo('report-panel') } };
+  })();
+
+  const FEEDBACK_STYLE = {
+    eligible: { border: 'border-tele-500/50 bg-tele-500/8', text: 'text-tele-300', icon: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1.2 14.4-4-4 1.4-1.4 2.6 2.6 5.6-5.6 1.4 1.4-7 7z' },
+    replicate: { border: 'border-signal-ice/50 bg-signal-ice/8', text: 'text-signal-ice', icon: 'M12 4V1L8 5l4 4V6a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z' },
+    confounded: { border: 'border-signal-amber/60 bg-signal-amber/10', text: 'text-signal-amber', icon: 'M12 2 1 21h22L12 2zm1 14h-2v2h2v-2zm0-7h-2v5h2V9z' },
+    invalid: { border: 'border-race-500/60 bg-race-500/10', text: 'text-race-400', icon: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm4.3 12.9-1.4 1.4-2.9-2.9-2.9 2.9-1.4-1.4 2.9-2.9-2.9-2.9 1.4-1.4 2.9 2.9 2.9-2.9 1.4 1.4-2.9 2.9 2.9 2.9z' },
+    scheme: { border: 'border-signal-amber/60 bg-signal-amber/10', text: 'text-signal-amber', icon: 'M12 2 1 21h22L12 2zm1 14h-2v2h2v-2zm0-7h-2v5h2V9z' },
+  } as const;
+  const FEEDBACK_TITLE = {
+    eligible: '试跑已保存，符合当前对照条件',
+    replicate: '试跑已保存，属于重复实验',
+    confounded: '试跑已保存，但不计入有效对照',
+    invalid: '试跑记录无效，不计入有效对照',
+    scheme: '试跑已保存，但当前方法方案无法判定资格',
+  } as const;
 
   return (
     <div className="space-y-4">
@@ -242,21 +332,91 @@ export default function CorneringRunner({
         </p>
       )}
 
-      {/* 进度反馈：四类计数口径见 Method Coach */}
-      <div className="flex flex-wrap items-center gap-3 rounded-lg border border-line bg-carbon-900/70 px-4 py-3">
-        <div className="flex gap-1">
-          {[0, 1, 2].map((i) => (
-            <span key={i} className={`h-1.5 w-8 rounded-sm ${i < report.counts.distinct ? 'bg-tele-400' : 'bg-carbon-700'}`} />
-          ))}
+      {/* UX-02：本次试跑资格反馈（紧邻结果，图标+文字+计数，刷新后由持久化数据重算） */}
+      {focusEval && feedbackKind && (
+        <div
+          role="status"
+          aria-live="polite"
+          key={`${focusEval.trial.id}-${feedbackKind}`}
+          className={`fade-up rounded-lg border p-4 ${FEEDBACK_STYLE[feedbackKind].border}`}
+        >
+          <div className="flex items-start gap-3">
+            <svg viewBox="0 0 24 24" className={`mt-0.5 h-5 w-5 shrink-0 ${FEEDBACK_STYLE[feedbackKind].text}`} fill="currentColor" aria-hidden="true">
+              <path d={FEEDBACK_STYLE[feedbackKind].icon} />
+            </svg>
+            <div className="min-w-0 flex-1">
+              <p className={`text-sm font-bold ${FEEDBACK_STYLE[feedbackKind].text}`}>{FEEDBACK_TITLE[feedbackKind]}</p>
+              {feedbackKind === 'eligible' && (
+                <p className="mt-1 text-xs leading-relaxed text-mist-500">
+                  已计入合格对照。当前合格试跑 <span className="num font-bold text-tele-300">{report.counts.eligible}</span> 条 ·
+                  不同自变量水平 <span className="num font-bold text-tele-300">{report.counts.distinct}/3</span>。
+                </p>
+              )}
+              {feedbackKind === 'replicate' && (
+                <p className="mt-1 text-xs leading-relaxed text-mist-500">
+                  重复实验仍可作为合格样本（合格数 +1），但不会增加不同自变量水平：当前有效水平仍为
+                  <span className="num font-bold text-signal-ice"> {report.counts.distinct}/3</span>。
+                  改变{report.independent?.name ?? '自变量'}取值再运行，才能新增水平。
+                </p>
+              )}
+              {feedbackKind === 'confounded' && (
+                <div className="mt-1 space-y-1">
+                  {focusEval.confounded.map((d) => (
+                    <p key={d.key} className="text-xs leading-relaxed text-mist-300">
+                      <span className="font-bold text-signal-amber">{d.name} {d.symbol}</span> 从
+                      <span className="num font-bold"> {d.from}{unitOf(d.key)}</span> 变为
+                      <span className="num font-bold"> {d.to}{unitOf(d.key)}</span> —— 控制变量被同时改变，无法归因。
+                    </p>
+                  ))}
+                  <p className="text-xs font-semibold leading-relaxed text-signal-amber">
+                    请将{focusEval.confounded.map((d) => `${d.name}恢复到 ${d.from}${unitOf(d.key)}`).join('、')}后重新运行。原始试跑已保留，不会删除。
+                  </p>
+                  <Button variant="ghost" onClick={fixControls} className="mt-2">一键恢复控制变量到基准值</Button>
+                </div>
+              )}
+              {(feedbackKind === 'invalid' || feedbackKind === 'scheme') && (
+                <div className="mt-1 space-y-1">
+                  {focusEval.reasons.map((r, i) => (
+                    <p key={i} className="text-xs leading-relaxed text-mist-300">{r}</p>
+                  ))}
+                  {feedbackKind === 'scheme' && onOpenMethod && (
+                    <Button variant="ghost" onClick={onOpenMethod} className="mt-2">打开方法编辑器</Button>
+                  )}
+                </div>
+              )}
+              <p className="num mt-2 text-[10px] text-mist-600">
+                试跑 #{String(focusEval.trial.index).padStart(2, '0')} · {focusEval.trial.id} · 「已保存」≠「合格对照」
+              </p>
+            </div>
+          </div>
         </div>
-        <p className="num text-xs font-bold text-mist-300">
-          合格对照 {report.counts.eligible} 条 · 不同取值 {report.counts.distinct} / 3
-        </p>
-        <p className={`text-[11px] ${report.collectReady ? 'font-semibold text-tele-300' : 'text-mist-500'}`}>
+      )}
+
+      {/* 进度与下一步：合格数 / 水平数分开显示，依据 evaluateComparison */}
+      <div className="rounded-lg border border-line bg-carbon-900/70 px-4 py-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex gap-1" aria-hidden="true">
+            {[0, 1, 2].map((i) => (
+              <span key={i} className={`h-1.5 w-8 rounded-sm ${i < report.counts.distinct ? 'bg-tele-400' : 'bg-carbon-700'}`} />
+            ))}
+          </div>
+          <p className="num text-xs font-bold text-mist-300">
+            合格对照 {report.counts.eligible} 条 · 不同水平 {report.counts.distinct}/3
+          </p>
+          <p className="num text-[10px] text-mist-600">已保存 {report.counts.total} 条（含重复 / 混杂 / 无效）</p>
+        </div>
+        <p className={`mt-2 text-[11px] leading-relaxed ${report.collectReady ? 'font-semibold text-tele-300' : 'text-mist-500'}`}>
           {report.collectReady
-            ? '采集阶段退出条件已满足 —— 可在上方阶段追踪器标记完成'
-            : (report.collectMissing[0] ?? '保持控制变量与基准一致，并改变自变量取值后运行新试跑')}
+            ? '对照要求已满足：可标记「数据采集」完成并进入数据分析。'
+            : `距离解锁数据分析还差 ${missingLevels} 个不同有效自变量水平${report.counts.eligible < 3 ? `，合格对照还差 ${3 - report.counts.eligible} 条` : ''}。`}
         </p>
+        <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-line pt-2">
+          <span className="panel-title shrink-0">下一步</span>
+          <p className="min-w-0 flex-1 text-xs font-semibold text-mist-300">{nextStep.text}</p>
+          {nextStep.action && (
+            <Button variant="tele" onClick={nextStep.action.fn} className="shrink-0">{nextStep.action.label}</Button>
+          )}
+        </div>
       </div>
 
       <p className="text-[10px] leading-relaxed text-mist-600">

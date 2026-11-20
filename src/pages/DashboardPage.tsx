@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useLabStore } from '@/data/store';
 import { isUsableTrial, readMetric, readParam } from '@/data/integrity';
-import { TEMPLATES } from '@/data/templates';
+import { TEMPLATES, experimentFlowStatus } from '@/data/templates';
 import { STAGES, currentStage, stageProgress, STAGE_MAP } from '@/pedagogy';
 import { CategoryBadge, Panel, StatCard, StageSegments } from '@/components/ui';
 import { TelemetryChart } from '@/components/TelemetryChart';
@@ -113,7 +113,20 @@ export default function DashboardPage() {
                       <p className="truncate text-sm font-bold text-mist-100">{exp.title}</p>
                       <p className="mt-1 line-clamp-1 text-xs text-mist-500">{exp.question}</p>
                     </div>
-                    <CategoryBadge category={exp.category} />
+                    <div className="flex flex-col items-end gap-1">
+                      <CategoryBadge category={exp.category} />
+                      <span
+                        className={`rounded border px-1.5 py-0.5 text-[10px] font-bold ${
+                          experimentFlowStatus(exp).key === 'preset'
+                            ? 'border-signal-ice/40 bg-signal-ice/10 text-signal-ice'
+                            : experimentFlowStatus(exp).key === 'full'
+                              ? 'border-tele-500/40 bg-tele-500/10 text-tele-300'
+                              : 'border-signal-amber/40 bg-signal-amber/10 text-signal-amber'
+                        }`}
+                      >
+                        {experimentFlowStatus(exp).label}
+                      </span>
+                    </div>
                   </div>
                   <div className="mt-3 flex items-center gap-3">
                     <StageSegments stages={exp.stages} className="flex-1" />

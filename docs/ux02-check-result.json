@@ -1,0 +1,109 @@
+{
+  "steps": [
+    {
+      "name": "run1-54",
+      "feedback": "试跑已保存，符合当前对照条件 | 已计入合格对照。当前合格试跑 1 条 · 不同自变量水平 1/3。 | 试跑 #01 · trial-mwoxxio8-6ur3m · 「已保存」≠「合格对照」",
+      "counts": {
+        "eligible": 1,
+        "distinct": 1,
+        "saved": 1
+      }
+    },
+    {
+      "name": "run2-54-repeat",
+      "feedback": "试跑已保存，属于重复实验 | 重复实验仍可作为合格样本（合格数 +1），但不会增加不同自变量水平：当前有效水平仍为 1/3。 改变车速取值再运行，才能新增水平。 | 试跑 #02 · trial-mwoxxj85-zv94a · 「已保存」≠「合格对照」",
+      "counts": {
+        "eligible": 2,
+        "distinct": 1,
+        "saved": 2
+      }
+    },
+    {
+      "name": "run3-72-R60-confounded",
+      "feedback": "试跑已保存，但不计入有效对照 | 弯道半径 R 从 50m 变为 60m —— 控制变量被同时改变，无法归因。 | 请将弯道半径恢复到 50m后重新运行。原始试跑已保留，不会删除。 | 一键恢复控制变量到基准值 | 试跑 #03 · trial-mwoxxjs7-kj8sv · 「已保存」≠「合格对照」",
+      "counts": {
+        "eligible": 2,
+        "distinct": 1,
+        "saved": 3
+      }
+    },
+    {
+      "name": "fix-restore",
+      "radiusInput": "50"
+    },
+    {
+      "name": "run4-72-R50",
+      "feedback": "试跑已保存，符合当前对照条件 | 已计入合格对照。当前合格试跑 3 条 · 不同自变量水平 2/3。 | 试跑 #04 · trial-mwoxxkmz-jg8fv · 「已保存」≠「合格对照」",
+      "counts": {
+        "eligible": 3,
+        "distinct": 2,
+        "saved": 4
+      },
+      "collectDisabled": true
+    },
+    {
+      "name": "run5-90",
+      "feedback": "试跑已保存，符合当前对照条件 | 已计入合格对照。当前合格试跑 4 条 · 不同自变量水平 3/3。 | 试跑 #05 · trial-mwoxxkx8-iqr3i · 「已保存」≠「合格对照」",
+      "counts": {
+        "eligible": 4,
+        "distinct": 3,
+        "saved": 5
+      },
+      "nextStep": "下一步 对照要求已满足：标记「数据采集」完成，进入数据分析 标记采集完成 模型假设：水平道路、匀速圆周运动、忽略空气动力与纵向轮胎力。λ > 1 仅表示在"
+    },
+    {
+      "name": "collect-complete",
+      "analyzeActive": true
+    },
+    {
+      "name": "radius-mode-72",
+      "feedback": "试跑已保存，但不计入有效对照 | 车速 v 从 54km/h 变为 72km/h —— 控制变量被同时改变，无法归因。 | 请将车速恢复到 54km/h后重新运行。原始试跑已保留，不会删除。 | 一键恢复控制变量到基准值 | 试跑 #06 · trial-mwoxxm97-vojpg · 「已保存」≠「合格对照」",
+      "counts": {
+        "eligible": 2,
+        "distinct": 1,
+        "saved": 6
+      }
+    },
+    {
+      "name": "missing-mu-after-refresh",
+      "feedback": "试跑记录无效，不计入有效对照 | 记录无效：缺少关键参数：mu（原始输入缺失，不得推断补造），不计入有效对照。 | 试跑 #90 · ux02-missing-mu · 「已保存」≠「合格对照」",
+      "counts": {
+        "eligible": 5,
+        "distinct": 3,
+        "saved": 7
+      }
+    },
+    {
+      "name": "missing-mu-second-refresh",
+      "feedback": "试跑记录无效，不计入有效对照 | 记录无效：缺少关键参数：mu（原始输入缺失，不得推断补造），不计入有效对照。 | 试跑 #90 · ux02-missing-mu · 「已保存」≠「合格对照」",
+      "counts": {
+        "eligible": 5,
+        "distinct": 3,
+        "saved": 7
+      }
+    },
+    {
+      "name": "after-cleanup",
+      "feedback": "试跑已保存，属于重复实验 | 重复实验仍可作为合格样本（合格数 +1），但不会增加不同自变量水平：当前有效水平仍为 3/3。 改变车速取值再运行，才能新增水平。 | 试跑 #06 · trial-mwoxxm97-vojpg · 「已保存」≠「合格对照」",
+      "counts": {
+        "eligible": 5,
+        "distinct": 3,
+        "saved": 6
+      }
+    },
+    {
+      "name": "home-badges",
+      "badges": {
+        "preset": true,
+        "full": true,
+        "noRunner": true
+      }
+    },
+    {
+      "name": "mobile",
+      "overflow": 0,
+      "feedbackVisible": true
+    }
+  ],
+  "consoleErrors": []
+}

@@ -151,7 +151,7 @@ export default function ExperimentDetailPage() {
       </header>
 
       {/* 阶段追踪器 */}
-      <Panel title="科研阶段追踪 · Stage Tracker" className="fade-up" right={<span className="num text-[10px] text-mist-600">点击阶段查看要求</span>}>
+      <Panel id="stage-tracker" title="科研阶段追踪 · Stage Tracker" className="fade-up" right={<span className="num text-[10px] text-mist-600">点击阶段查看要求</span>}>
         <StageTracker exp={exp} onSelect={(s) => setFocusStage(s)} />
         <div className="mt-4 rounded-lg border border-line bg-carbon-900/70 p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -301,7 +301,13 @@ export default function ExperimentDetailPage() {
       <Panel
         title="④ 数据采集 · 试跑记录"
         className="fade-up"
-        right={<span className="num text-[10px] text-mist-600">{completedTrials.length}/{exp.trials.length} COMPLETED</span>}
+        right={
+          <span className="num text-[10px] text-mist-600">
+            {comparison
+              ? `已保存 ${exp.trials.length} · 合格 ${completedTrials.length} · 水平 ${comparison.counts.distinct}/3`
+              : `已保存 ${exp.trials.length} · 有效 ${completedTrials.length}`}
+          </span>
+        }
       >
         {invalidTrials.length > 0 && (
           <p role="alert" className="mb-4 rounded border border-signal-amber/40 bg-signal-amber/10 px-3 py-2 text-[11px] leading-relaxed text-signal-amber">
@@ -314,7 +320,7 @@ export default function ExperimentDetailPage() {
             <EmptyState icon="🔒" title="采集阶段未解锁" hint="请先完成实验设计阶段，再运行试跑——科研流程不允许跳步。" />
           ) : (
             <div className="space-y-4">
-              <CorneringRunner exp={exp} report={comparison!} notify={notify} />
+              <CorneringRunner exp={exp} report={comparison!} notify={notify} onOpenMethod={() => setEditingMethod(true)} />
               {exp.trials.length > 0 && (
                 <div className="grid gap-4 lg:grid-cols-2">
                   <div className="overflow-x-auto">
@@ -462,7 +468,7 @@ export default function ExperimentDetailPage() {
       </Panel>
 
       {exp.category === 'cornering' && comparison && exp.stages.analyze !== 'locked' && (
-        <Panel title="⑤ 数据分析 · 分析工作台" className="fade-up">
+        <Panel id="analysis-workbench" title="⑤ 数据分析 · 分析工作台" className="fade-up">
           <AnalysisWorkbench exp={exp} report={comparison} notify={notify} />
         </Panel>
       )}
@@ -505,7 +511,7 @@ export default function ExperimentDetailPage() {
         </Panel>
 
         {/* 结论 */}
-        <Panel title="⑥ 结论" className="fade-up">
+        <Panel id="conclusion-panel" title="⑥ 结论" className="fade-up">
           {exp.category === 'cornering' && comparison && exp.stages.conclude !== 'locked' && (
             <div className="mb-3 space-y-1.5 rounded-lg border border-line bg-carbon-900/70 p-3 text-xs leading-relaxed">
               <p className="panel-title">结论证据上下文</p>
@@ -642,7 +648,7 @@ export default function ExperimentDetailPage() {
       </div>
 
       {/* 报告 */}
-      <Panel title="⑦ 实验报告" className="fade-up">
+      <Panel id="report-panel" title="⑦ 实验报告" className="fade-up">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="max-w-xl text-xs leading-relaxed text-mist-500">
             报告生成器会把问题、假设、变量表、试跑数据、分析、结论与流程存档组装为标准结构的 Markdown 报告。

@@ -1,4 +1,14 @@
-import type { ExperimentTemplate } from './schema';
+import type { Experiment, ExperimentTemplate } from './schema';
+
+/** UX-02：实验可用状态的唯一判定出口（实验库 / 首页共用，禁止第二套逻辑） */
+export type FlowStatusKey = 'full' | 'preset' | 'no-runner';
+
+export function experimentFlowStatus(exp: Experiment): { key: FlowStatusKey; label: string } {
+  if (exp.dataSourceNote) return { key: 'preset', label: '预置示例' };
+  const tpl = TEMPLATES.find((t) => t.category === exp.category);
+  if (tpl?.runnable) return { key: 'full', label: '完整流程' };
+  return { key: 'no-runner', label: '运行器未接入' };
+}
 
 /** 第一阶段预置实验模板；第二阶段将接入数值仿真器执行试跑 */
 export const TEMPLATES: ExperimentTemplate[] = [

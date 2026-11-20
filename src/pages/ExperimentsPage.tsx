@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLabStore } from '@/data/store';
 import { isUsableTrial } from '@/data/integrity';
-import { TEMPLATES } from '@/data/templates';
+import { TEMPLATES, experimentFlowStatus } from '@/data/templates';
 import { CATEGORY_LABEL, type ExperimentCategory } from '@/data/schema';
 import { currentStage, stageProgress, STAGE_MAP } from '@/pedagogy';
 import { CategoryBadge, EmptyState, Panel, StageSegments } from '@/components/ui';
@@ -106,14 +106,14 @@ export default function ExperimentsPage() {
                     <CategoryBadge category={exp.category} />
                     <span
                       className={`rounded border px-1.5 py-0.5 text-[10px] font-bold ${
-                        exp.dataSourceNote
+                        experimentFlowStatus(exp).key === 'preset'
                           ? 'border-signal-ice/40 bg-signal-ice/10 text-signal-ice'
-                          : exp.category === 'cornering'
+                          : experimentFlowStatus(exp).key === 'full'
                             ? 'border-tele-500/40 bg-tele-500/10 text-tele-300'
                             : 'border-signal-amber/40 bg-signal-amber/10 text-signal-amber'
                       }`}
                     >
-                      {exp.dataSourceNote ? '预置示例' : exp.category === 'cornering' ? '完整流程' : '运行器未接入'}
+                      {experimentFlowStatus(exp).label}
                     </span>
                   </div>
                 </div>
