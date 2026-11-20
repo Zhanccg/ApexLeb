@@ -5,7 +5,7 @@ import { DIRECTION_LABEL, ROLE_LABEL, type Conclusion, type StageId } from '@/da
 import { STAGE_MAP, checkStageCompletion, currentStage, stageProgress } from '@/pedagogy';
 import { generateReport } from '@/report/generator';
 import { G } from '@/engine/constants';
-import { fmtNum, isUsableTrial, trialInvalidReason } from '@/data/integrity';
+import { fmtNum, isUsableTrial, readChannel, readMetric, readParam, samplesOf, trialInvalidReason } from '@/data/integrity';
 import { Button, CategoryBadge, EmptyState, Panel, StageSegments, Toast } from '@/components/ui';
 import StageTracker from '@/components/StageTracker';
 import CorneringRunner from '@/components/CorneringRunner';
@@ -60,8 +60,11 @@ export default function ExperimentDetailPage() {
     if (!exp || exp.category !== 'cornering') return [];
     return exp.trials
       .filter(isUsableTrial)
-      .map((t) => ({ x: t.params.speedKmh, y: t.metrics.lateralAccelMs2 }))
-      .filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y))
+      .flatMap((t) => {
+        const x = readParam(t, 'speedKmh');
+        const y = readMetric(t, 'lateralAccelMs2');
+        return x !== undefined && y !== undefined ? [{ x, y }] : [];
+      })
       .sort((a, b) => a.x - b.x);
   }, [exp]);
 
@@ -270,7 +273,8 @@ export default function ExperimentDetailPage() {
                       <tbody>
                         {exp.trials.map((t) => {
                           const bad = t.status === 'invalid' || trialInvalidReason(t) !== null;
-                          const over = !bad && t.metrics.gripUtilization > 1;
+                          const lambda = readMetric(t, 'gripUtilization');
+                          const over = !bad && lambda !== undefined && lambda > 1;
                           return (
                             <tr
                               key={t.id}
@@ -283,14 +287,14 @@ export default function ExperimentDetailPage() {
                               <td className="num py-2 pr-2 text-mist-500">
                                 {Number.isFinite(t.index) ? String(t.index).padStart(2, '0') : '—'}
                               </td>
-                              <td className="num py-2 pr-2 font-bold text-signal-amber">{fmtNum(t.params.speedKmh, 0)}</td>
-                              <td className="num py-2 pr-2 text-mist-300">{fmtNum(t.params.radiusM, 0)}</td>
-                              <td className="num py-2 pr-2 text-mist-300">{fmtNum(t.params.mu)}</td>
-                              <td className="num py-2 pr-2 text-signal-ice">{fmtNum(t.metrics.lateralAccelMs2)}</td>
+                              <td className="num py-2 pr-2 font-bold text-signal-amber">{fmtNum(readParam(t, 'speedKmh'), 0)}</td>
+                              <td className="num py-2 pr-2 text-mist-300">{fmtNum(readParam(t, 'radiusM'), 0)}</td>
+                              <td className="num py-2 pr-2 text-mist-300">{fmtNum(readParam(t, 'mu'))}</td>
+                              <td className="num py-2 pr-2 text-signal-ice">{fmtNum(readMetric(t, 'lateralAccelMs2'))}</td>
                               <td className={`num py-2 pr-2 font-bold ${over ? 'text-race-400' : 'text-tele-300'}`}>
-                                {bad ? '非有限' : `${(t.metrics.gripUtilization * 100).toFixed(1)}%`}
+                                {lambda === undefined ? '非有限' : `${(lambda * 100).toFixed(1)}%`}
                               </td>
-                              <td className="num py-2 pr-2 text-signal-violet">{fmtNum(t.metrics.limitSpeedKmh)}</td>
+                              <td className="num py-2 pr-2 text-signal-violet">{fmtNum(readMetric(t, 'limitSpeedKmh'))}</td>
                               <td className="py-2">
                                 <span className={`rounded border px-1.5 py-0.5 text-[10px] font-bold ${
                                   bad
@@ -321,8 +325,8 @@ export default function ExperimentDetailPage() {
                         yLabel="ay / m/s²"
                         animate={false}
                         reference={{
-                          y: (refTrial?.params.mu ?? 1) * G,
-                          label: `ay_max = ${((refTrial?.params.mu ?? 1) * G).toFixed(2)} m/s²`,
+                          y: (readParam(refTrial, 'mu') ?? 1) * G,
+                          label: `ay_max = ${((readParam(refTrial, 'mu') ?? 1) * G).toFixed(2)} m/s²`,
                         }}
                       />
                     ) : (
@@ -361,10 +365,10 @@ export default function ExperimentDetailPage() {
                       }`}
                     >
                       <td className="num py-2 pr-2 text-mist-500">{String(t.index).padStart(2, '0')}</td>
-                      <td className="num py-2 pr-2 font-bold text-signal-amber">{fmtNum(t.params.mu)}</td>
-                      <td className="num py-2 pr-2 text-mist-100">{fmtNum(t.metrics.brakeDistance)} m</td>
-                      <td className="num py-2 pr-2 text-mist-500">{fmtNum(t.metrics.stopTime)} s</td>
-                      <td className="py-2"><Sparkline values={t.samples.map((s) => s.channels.speed).filter(Number.isFinite)} color={trial?.id === t.id ? '#00d2be' : '#647182'} /></td>
+                      <td className="num py-2 pr-2 font-bold text-signal-amber">{fmtNum(readParam(t, 'mu'))}</td>
+                      <td className="num py-2 pr-2 text-mist-100">{fmtNum(readMetric(t, 'brakeDistance'))} m</td>
+                      <td className="num py-2 pr-2 text-mist-500">{fmtNum(readMetric(t, 'stopTime'))} s</td>
+                      <td className="py-2"><Sparkline values={samplesOf(t).map((s) => readChannel(s, 'speed')).filter((v): v is number => v !== undefined)} color={trial?.id === t.id ? '#00d2be' : '#647182'} /></td>
                     </tr>
                   ))}
                 </tbody>
@@ -375,9 +379,11 @@ export default function ExperimentDetailPage() {
               <p className="panel-title mb-1">试跑 {String(trial?.index ?? 0).padStart(2, '0')} · 速度遥测 (km/h vs s)</p>
               {trial && (
                 <TelemetryChart
-                  points={trial.samples
-                    .map((s) => ({ x: s.t, y: s.channels.speed }))
-                    .filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y))}
+                  points={samplesOf(trial).flatMap((s) => {
+                    const x = typeof s.t === 'number' && Number.isFinite(s.t) ? s.t : undefined;
+                    const y = readChannel(s, 'speed');
+                    return x !== undefined && y !== undefined ? [{ x, y }] : [];
+                  })}
                   color="#e10600"
                   xLabel="t / s"
                   yLabel="speed / km/h"

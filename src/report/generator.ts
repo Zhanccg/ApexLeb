@@ -4,7 +4,7 @@
  */
 import type { Experiment, ReportDoc } from '@/data/schema';
 import { CATEGORY_LABEL, DIRECTION_LABEL, ROLE_LABEL } from '@/data/schema';
-import { isUsableTrial } from '@/data/integrity';
+import { isUsableTrial, readMetric, readParam } from '@/data/integrity';
 import { STAGES } from '@/pedagogy';
 
 const fmtDate = (iso: string) => new Date(iso).toLocaleString('zh-CN', { hour12: false });
@@ -52,8 +52,8 @@ export function renderReportMarkdown(exp: Experiment): string {
       `|---|---|${metricKeys.map(() => '---').join('|')}|---|`,
     );
     for (const t of completed) {
-      const p = independent ? t.params[independent.id] : '—';
-      lines.push(`| ${t.index} | ${p} | ${metricKeys.map((k) => t.metrics[k]).join(' | ')} | ${t.note || '—'} |`);
+      const p = independent ? (readParam(t, independent.id) ?? '—') : '—';
+      lines.push(`| ${t.index} | ${p} | ${metricKeys.map((k) => readMetric(t, k) ?? '—').join(' | ')} | ${t.note || '—'} |`);
     }
     lines.push('');
   } else {

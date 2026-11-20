@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useLabStore } from '@/data/store';
-import { isUsableTrial } from '@/data/integrity';
+import { isUsableTrial, readMetric, readParam } from '@/data/integrity';
 import { TEMPLATES } from '@/data/templates';
 import { STAGES, currentStage, stageProgress, STAGE_MAP } from '@/pedagogy';
 import { CategoryBadge, Panel, StatCard, StageSegments } from '@/components/ui';
@@ -20,9 +20,12 @@ export default function DashboardPage() {
   const brakingExp = experiments.find((e) => e.category === 'braking' && e.trials.length > 0);
   const chartPoints =
     brakingExp?.trials
-      .filter((t) => t.status === 'completed')
-      .map((t) => ({ x: t.params.mu, y: t.metrics.brakeDistance }))
-      .filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y))
+      .filter(isUsableTrial)
+      .flatMap((t) => {
+        const x = readParam(t, 'mu');
+        const y = readMetric(t, 'brakeDistance');
+        return x !== undefined && y !== undefined ? [{ x, y }] : [];
+      })
       .sort((a, b) => a.x - b.x) ?? [];
 
   const quickStart = (tplId: string) => {

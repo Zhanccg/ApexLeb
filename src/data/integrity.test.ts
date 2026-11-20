@@ -3,6 +3,11 @@ import {
   fmtNum,
   isUsableTrial,
   parsePersistedRaw,
+  readChannel,
+  readMetric,
+  readParam,
+  requiredMetricKeys,
+  samplesOf,
   sanitizeExperiment,
   sanitizePersistedState,
   sanitizeTrial,
@@ -166,5 +171,92 @@ describe('展示格式化 fmtNum', () => {
   });
   it.each([[Infinity], [-Infinity], [Number.NaN], [null], [undefined], ['4.5']])('%s → 非有限', (v) => {
     expect(fmtNum(v)).toBe('非有限');
+  });
+});
+
+describe('metrics 整对象异常（T03 最终修复）', () => {
+  it.each([
+    ['A: metrics 为 null', null],
+    ['B: metrics 为 undefined', undefined],
+    ['C: metrics 为数组', []],
+    ['C: metrics 为字符串', 'broken'],
+    ['C: metrics 为数字', 42],
+    ['C: metrics 为布尔', true],
+    ['C: metrics 为空对象', {}],
+  ])('%s → 判定无效且不抛异常', (_label, metrics) => {
+    const bad = { ...goodTrial, metrics };
+    expect(() => trialInvalidReason(bad)).not.toThrow();
+    expect(trialInvalidReason(bad)).toContain('指标结构非法');
+    expect(isUsableTrial(bad as Trial)).toBe(false);
+  });
+  it('B: metrics 键缺失 → 判定无效', () => {
+    const { metrics: _m, ...rest } = goodTrial;
+    expect(trialInvalidReason(rest)).toContain('指标结构非法');
+  });
+  it('D: 单个指标为 null → 判定无效', () => {
+    const bad = { ...goodTrial, metrics: { ...goodTrial.metrics, gripUtilization: null } };
+    expect(trialInvalidReason(bad)).not.toBeNull();
+  });
+  it('必要计算字段缺失 → 判定无效并列出字段', () => {
+    const bad = { ...goodTrial, metrics: { lateralAccelMs2: 4.5 } };
+    const reason = trialInvalidReason(bad);
+    expect(reason).toContain('缺少必要计算字段');
+    expect(reason).toContain('gripUtilization');
+  });
+  it('制动形状记录按制动必要字段校验', () => {
+    const braking = {
+      ...goodTrial,
+      params: { mu: 1, v0: 100, mass: 570 },
+      metrics: { brakeDistance: 39.33, stopTime: 2.83, peakDecelG: 1 },
+    };
+    expect(trialInvalidReason(braking)).toBeNull();
+    expect(trialInvalidReason({ ...braking, metrics: { brakeDistance: 39.33 } })).toContain('stopTime');
+    expect(requiredMetricKeys(braking.params)).toEqual(['brakeDistance', 'stopTime']);
+  });
+  it('sanitizeTrial 保留 null metrics 原值并标记 invalid', () => {
+    const out = sanitizeTrial({ ...goodTrial, metrics: null });
+    expect(out?.status).toBe('invalid');
+    expect(out?.metrics).toBeNull();
+    expect(out?.invalidReason).toContain('指标结构非法');
+  });
+  it('异常记录不删除所属实验，其余记录保留', () => {
+    const out = sanitizeExperiment({
+      id: 'e1',
+      title: 't',
+      trials: [goodTrial, { ...goodTrial, id: 'bad-null', metrics: null }],
+      stages: {},
+    });
+    expect(out?.trials).toHaveLength(2);
+    expect(out?.trials[1].status).toBe('invalid');
+  });
+});
+
+describe('安全读取函数（展示路径不抛异常）', () => {
+  it.each([[null], [undefined], [[]], ['x'], [{}]])('metrics=%s 时 readMetric 返回 undefined', (metrics) => {
+    expect(readMetric({ ...goodTrial, metrics }, 'lateralAccelMs2')).toBeUndefined();
+  });
+  it('readMetric / readParam 对 null 记录安全', () => {
+    expect(readMetric(null, 'lateralAccelMs2')).toBeUndefined();
+    expect(readParam(null, 'mu')).toBeUndefined();
+    expect(readChannel(null, 'speed')).toBeUndefined();
+  });
+  it('正常记录读取值正确', () => {
+    expect(readMetric(goodTrial, 'lateralAccelMs2')).toBe(4.5);
+    expect(readParam(goodTrial, 'speedKmh')).toBe(54);
+    expect(readChannel(goodTrial.samples[0], 'speed')).toBe(54);
+  });
+  it('samples 为 null / 非数组时 samplesOf 返回空数组', () => {
+    expect(samplesOf({ ...goodTrial, samples: null })).toEqual([]);
+    expect(samplesOf({ ...goodTrial, samples: 'x' })).toEqual([]);
+    expect(samplesOf(null)).toEqual([]);
+  });
+  it('channels 为 null 时 readChannel 返回 undefined', () => {
+    expect(readChannel({ t: 0, channels: null }, 'speed')).toBeUndefined();
+  });
+  it('崩溃路径回归：fmtNum(readMetric(nullMetrics)) 不抛异常且显示非有限', () => {
+    const bad = { ...goodTrial, metrics: null };
+    expect(() => fmtNum(readMetric(bad, 'lateralAccelMs2'))).not.toThrow();
+    expect(fmtNum(readMetric(bad, 'lateralAccelMs2'))).toBe('非有限');
+    expect(fmtNum(readMetric(bad, 'limitSpeedKmh'))).toBe('非有限');
   });
 });

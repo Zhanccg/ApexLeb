@@ -8,8 +8,59 @@ import type { Experiment, ReportDoc, StageId, StageStatus, Trial } from './schem
 export const isFiniteNumber = (v: unknown): v is number =>
   typeof v === 'number' && Number.isFinite(v);
 
-const allFiniteValues = (rec: unknown): boolean =>
-  Boolean(rec) && typeof rec === 'object' && Object.values(rec as Record<string, unknown>).every(isFiniteNumber);
+/** 合法数值记录：非 null 的普通对象（拒绝数组）、至少一个键、全部值为有限数字 */
+export const isFiniteRecord = (rec: unknown): rec is Record<string, number> =>
+  Boolean(rec) &&
+  typeof rec === 'object' &&
+  !Array.isArray(rec) &&
+  Object.keys(rec as Record<string, unknown>).length > 0 &&
+  Object.values(rec as Record<string, unknown>).every(isFiniteNumber);
+
+/** 按参数形状推断该试跑必须具备的计算字段（统一契约，供校验与展示共用） */
+export function requiredMetricKeys(params: unknown): string[] {
+  if (!params || typeof params !== 'object') return [];
+  const p = params as Record<string, unknown>;
+  if (isFiniteNumber(p.speedKmh)) {
+    return ['lateralAccelMs2', 'gripUtilization', 'limitSpeedKmh', 'limitSpeedMs'];
+  }
+  if (isFiniteNumber(p.mu) && isFiniteNumber(p.v0)) {
+    return ['brakeDistance', 'stopTime'];
+  }
+  return [];
+}
+
+/** 安全读取指标 / 参数：metrics 或 params 为 null / 缺失 / 非法结构时返回 undefined，绝不抛异常 */
+export function readMetric(t: unknown, key: string): number | undefined {
+  if (!t || typeof t !== 'object') return undefined;
+  const m = (t as Partial<Trial>).metrics;
+  if (!m || typeof m !== 'object' || Array.isArray(m)) return undefined;
+  const v = (m as Record<string, unknown>)[key];
+  return isFiniteNumber(v) ? v : undefined;
+}
+
+export function readParam(t: unknown, key: string): number | undefined {
+  if (!t || typeof t !== 'object') return undefined;
+  const p = (t as Partial<Trial>).params;
+  if (!p || typeof p !== 'object' || Array.isArray(p)) return undefined;
+  const v = (p as Record<string, unknown>)[key];
+  return isFiniteNumber(v) ? v : undefined;
+}
+
+/** 安全读取遥测样本通道值（样本或 channels 为 null / 非法结构时返回 undefined） */
+export function readChannel(s: unknown, key: string): number | undefined {
+  if (!s || typeof s !== 'object') return undefined;
+  const c = (s as { channels?: unknown }).channels;
+  if (!c || typeof c !== 'object' || Array.isArray(c)) return undefined;
+  const v = (c as Record<string, unknown>)[key];
+  return isFiniteNumber(v) ? v : undefined;
+}
+
+/** 安全样本数组：samples 为 null / 非数组时返回空数组 */
+export function samplesOf(t: unknown): Array<{ t?: unknown; channels?: unknown }> {
+  if (!t || typeof t !== 'object') return [];
+  const s = (t as Partial<Trial>).samples;
+  return Array.isArray(s) ? s : [];
+}
 
 /** 返回记录无效的原因；null 表示结构完整且数值有限 */
 export function trialInvalidReason(t: unknown): string | null {
@@ -18,12 +69,14 @@ export function trialInvalidReason(t: unknown): string | null {
   if (typeof tr.id !== 'string' || tr.id === '') return '缺少试跑 ID';
   if (!isFiniteNumber(tr.index)) return '试跑序号非有限数字';
   if (typeof tr.createdAt !== 'string' || tr.createdAt === '') return '缺少试跑时间戳';
-  if (!allFiniteValues(tr.params)) return '参数含非有限数值（NaN / Infinity / 缺失）';
-  if (!allFiniteValues(tr.metrics)) return '指标含非有限数值（NaN / Infinity / 缺失）';
+  if (!isFiniteRecord(tr.params)) return '参数结构非法或含非有限数值（null / 数组 / NaN / Infinity）';
+  if (!isFiniteRecord(tr.metrics)) return '指标结构非法或含非有限数值（null / 数组 / NaN / Infinity）';
+  const missing = requiredMetricKeys(tr.params).filter((k) => !isFiniteNumber(readMetric(tr, k)));
+  if (missing.length > 0) return `缺少必要计算字段：${missing.join('、')}`;
   if (tr.samples !== undefined) {
     if (!Array.isArray(tr.samples)) return '遥测样本结构损坏';
     const bad = tr.samples.some(
-      (s) => !s || typeof s !== 'object' || !isFiniteNumber(s.t) || !allFiniteValues(s.channels),
+      (s) => !s || typeof s !== 'object' || !isFiniteNumber(s.t) || !isFiniteRecord(s.channels),
     );
     if (bad) return '遥测样本含非有限数值';
   }

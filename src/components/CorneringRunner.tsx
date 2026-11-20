@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Experiment } from '@/data/schema';
 import { useLabStore } from '@/data/store';
-import { isUsableTrial } from '@/data/integrity';
+import { isUsableTrial, readParam } from '@/data/integrity';
 import {
   CORNERING_MODEL_VERSION,
   computeCorneringRun,
@@ -40,9 +40,9 @@ export default function CorneringRunner({
   const latest = completed[completed.length - 1] ?? null;
   const latestComp = latest
     ? computeCorneringRun({
-        speedKmh: latest.params.speedKmh,
-        radiusM: latest.params.radiusM,
-        mu: latest.params.mu,
+        speedKmh: readParam(latest, 'speedKmh') ?? 0,
+        radiusM: readParam(latest, 'radiusM') ?? 0,
+        mu: readParam(latest, 'mu') ?? 0,
       })
     : null;
   const latestResult = latestComp && latestComp.ok ? latestComp.result : null;
