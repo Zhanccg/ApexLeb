@@ -2,13 +2,15 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useLabStore } from '@/data/store';
 import { DIRECTION_LABEL, ROLE_LABEL, type Conclusion, type StageId } from '@/data/schema';
-import { STAGE_MAP, checkStageCompletion, currentStage, stageProgress } from '@/pedagogy';
+import { STAGE_MAP, checkStageCompletion, currentStage, evaluateComparison, stageProgress } from '@/pedagogy';
 import { generateReport } from '@/report/generator';
 import { G } from '@/engine/constants';
 import { fmtNum, isUsableTrial, readChannel, readMetric, readParam, samplesOf, trialInvalidReason } from '@/data/integrity';
 import { Button, CategoryBadge, EmptyState, Panel, StageSegments, Toast } from '@/components/ui';
 import StageTracker from '@/components/StageTracker';
 import CorneringRunner from '@/components/CorneringRunner';
+import MethodEditor from '@/components/MethodEditor';
+import MethodCoach from '@/components/MethodCoach';
 import { Sparkline, TelemetryChart } from '@/components/TelemetryChart';
 
 const ROLE_STYLE = {
@@ -29,6 +31,7 @@ export default function ExperimentDetailPage() {
   const [toast, setToast] = useState<{ message: string; tone: 'ok' | 'err' } | null>(null);
   const [focusStage, setFocusStage] = useState<StageId | null>(null);
   const [editingQuestion, setEditingQuestion] = useState(false);
+  const [editingMethod, setEditingMethod] = useState(false);
   const [questionDraft, setQuestionDraft] = useState('');
   const [selectedTrial, setSelectedTrial] = useState<string | null>(null);
   const [conclusionDraft, setConclusionDraft] = useState<Omit<Conclusion, 'createdAt'>>({
@@ -56,17 +59,19 @@ export default function ExperimentDetailPage() {
     );
   }, [exp, selectedTrial]);
 
+  const comparison = useMemo(() => (exp ? evaluateComparison(exp) : null), [exp]);
+
   const corneringPoints = useMemo(() => {
-    if (!exp || exp.category !== 'cornering') return [];
-    return exp.trials
-      .filter(isUsableTrial)
+    if (!comparison) return [];
+    const key = comparison.independent?.id ?? 'speedKmh';
+    return comparison.eligible
       .flatMap((t) => {
-        const x = readParam(t, 'speedKmh');
+        const x = readParam(t, key);
         const y = readMetric(t, 'lateralAccelMs2');
         return x !== undefined && y !== undefined ? [{ x, y }] : [];
       })
       .sort((a, b) => a.x - b.x);
-  }, [exp]);
+  }, [comparison]);
 
   if (!exp) {
     return (
@@ -152,6 +157,18 @@ export default function ExperimentDetailPage() {
         </div>
       </Panel>
 
+      {editingMethod && exp.category === 'cornering' && (
+        <Panel title="方法编辑器 · 假设与变量角色" className="fade-up">
+          <MethodEditor
+            exp={exp}
+            onClose={(saved, notice) => {
+              setEditingMethod(false);
+              if (saved) notify(notice ?? '方法设置已保存', 'ok');
+            }}
+          />
+        </Panel>
+      )}
+
       <div className="grid gap-5 lg:grid-cols-2">
         {/* 研究问题 */}
         <Panel
@@ -187,7 +204,17 @@ export default function ExperimentDetailPage() {
         </Panel>
 
         {/* 假设 */}
-        <Panel title="② 假设" className="fade-up">
+        <Panel
+          title="② 假设"
+          className="fade-up"
+          right={
+            exp.category === 'cornering' && (
+              <button onClick={() => setEditingMethod(true)} className="cursor-pointer text-[11px] font-semibold text-tele-400 hover:text-tele-300">
+                编辑假设 / 变量
+              </button>
+            )
+          }
+        >
           {exp.hypothesis ? (
             <div className="space-y-2.5 text-sm">
               <p className="leading-relaxed text-mist-300">{exp.hypothesis.statement}</p>
@@ -205,7 +232,17 @@ export default function ExperimentDetailPage() {
       </div>
 
       {/* 变量表 */}
-      <Panel title="③ 实验设计 · 变量表" className="fade-up">
+      <Panel
+        title="③ 实验设计 · 变量表"
+        className="fade-up"
+        right={
+          exp.category === 'cornering' && (
+            <button onClick={() => setEditingMethod(true)} className="cursor-pointer text-[11px] font-semibold text-tele-400 hover:text-tele-300">
+              编辑变量角色
+            </button>
+          )
+        }
+      >
         <div className="overflow-x-auto">
           <table className="w-full min-w-[560px] text-left text-sm">
             <thead>
@@ -236,6 +273,12 @@ export default function ExperimentDetailPage() {
         </div>
       </Panel>
 
+      {exp.category === 'cornering' && comparison && (
+        <Panel title="实验方法纠错 · Method Coach" className="fade-up">
+          <MethodCoach exp={exp} report={comparison} />
+        </Panel>
+      )}
+
       {/* 试跑数据 */}
       <Panel
         title="④ 数据采集 · 试跑记录"
@@ -253,7 +296,7 @@ export default function ExperimentDetailPage() {
             <EmptyState icon="🔒" title="采集阶段未解锁" hint="请先完成实验设计阶段，再运行试跑——科研流程不允许跳步。" />
           ) : (
             <div className="space-y-4">
-              <CorneringRunner exp={exp} notify={notify} />
+              <CorneringRunner exp={exp} report={comparison!} notify={notify} />
               {exp.trials.length > 0 && (
                 <div className="grid gap-4 lg:grid-cols-2">
                   <div className="overflow-x-auto">
@@ -316,12 +359,14 @@ export default function ExperimentDetailPage() {
                     </p>
                   </div>
                   <div className="rounded-lg border border-line bg-carbon-900/60 p-3">
-                    <p className="panel-title mb-1">侧向加速度–车速曲线 · 虚线为 ay_max = μg</p>
+                    <p className="panel-title mb-1">
+                      侧向加速度–{comparison?.independent?.name ?? '车速'}曲线 · 虚线为 ay_max = μg
+                    </p>
                     {corneringPoints.length >= 2 ? (
                       <TelemetryChart
                         points={corneringPoints}
                         color="#4cc3ff"
-                        xLabel="v / km/h"
+                        xLabel={`${comparison?.independent?.symbol ?? 'v'} / ${comparison?.independent?.unit ?? 'km/h'}`}
                         yLabel="ay / m/s²"
                         animate={false}
                         reference={{
@@ -330,8 +375,11 @@ export default function ExperimentDetailPage() {
                         }}
                       />
                     ) : (
-                      <p className="py-8 text-center text-xs text-mist-500">再以不同车速运行一次试跑，即可生成 ay–v 对比曲线。</p>
+                      <p className="py-8 text-center text-xs text-mist-500">再以不同自变量取值运行一次合格试跑，即可生成对照曲线。</p>
                     )}
+                    <p className="mt-1 text-[10px] text-mist-600">
+                      仅绘制合格对照（混杂 / 无效 / 重复判定见 Method Coach）· 横轴与实验方案自变量一致
+                    </p>
                   </div>
                 </div>
               )}

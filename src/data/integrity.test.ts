@@ -164,6 +164,52 @@ describe('持久化清洗 sanitizePersistedState', () => {
   });
 });
 
+describe('旧变量字段迁移（T04 案例五）', () => {
+  const legacyExp = {
+    id: 'exp-legacy',
+    title: '弯道半径与极限过弯速度',
+    category: 'cornering',
+    question: 'q',
+    hypothesis: null,
+    variables: [
+      { id: 'radius', name: '弯道半径', symbol: 'r', unit: 'm', role: 'independent', min: 15, max: 200, step: 5, defaultValue: 60, hint: '' },
+      { id: 'vLimit', name: '极限过弯速度', symbol: 'v', unit: 'km/h', role: 'dependent', min: 0, max: 250, step: 0.1, defaultValue: 0, hint: '' },
+      { id: 'mu', name: '轮胎摩擦系数', symbol: 'μ', unit: '—', role: 'controlled', min: 0.5, max: 1.6, step: 0.05, defaultValue: 1.35, hint: '' },
+    ],
+    trials: [goodTrial],
+    analysis: null,
+    conclusion: null,
+    stages: { question: 'done', hypothesis: 'done', design: 'done', collect: 'done', analyze: 'active', conclude: 'locked', report: 'locked' },
+    tags: [],
+    createdAt: '2026-11-19T10:00:00.000Z',
+    updatedAt: '2026-11-19T10:00:00.000Z',
+  };
+  it('旧 id 迁移为规范键，保留原自变量选择与全部试跑、阶段', () => {
+    const out = sanitizeExperiment(legacyExp);
+    expect(out).not.toBeNull();
+    if (!out) return;
+    expect(out.variablesVersion).toBe(2);
+    expect(out.variables.map((v) => v.id).sort()).toEqual(['lateralAccelMs2', 'mu', 'radiusM', 'speedKmh']);
+    expect(out.variables.find((v) => v.role === 'independent')?.id).toBe('radiusM');
+    expect(out.variables.find((v) => v.role === 'dependent')?.id).toBe('lateralAccelMs2');
+    expect(out.legacyMigrationNote).toContain('radius');
+    expect(out.trials).toHaveLength(1);
+    expect(out.stages.collect).toBe('done');
+    expect(out.stages.analyze).toBe('active');
+  });
+  it('规范定义二次读取不重建、不产生迁移提示', () => {
+    const once = sanitizeExperiment(legacyExp);
+    const twice = sanitizeExperiment(once);
+    expect(twice?.legacyMigrationNote).toBe(once?.legacyMigrationNote);
+    expect(twice?.variables).toEqual(once?.variables);
+  });
+  it('迁移后试跑参数键无需改动即可被对照判定读取', () => {
+    const out = sanitizeExperiment(legacyExp);
+    expect(readParam(out?.trials[0], 'radiusM')).toBe(50);
+    expect(readMetric(out?.trials[0], 'lateralAccelMs2')).toBe(4.5);
+  });
+});
+
 describe('展示格式化 fmtNum', () => {
   it('有限数值正常格式化', () => {
     expect(fmtNum(4.5)).toBe('4.50');

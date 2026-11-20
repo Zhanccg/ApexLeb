@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Experiment } from '@/data/schema';
+import type { ComparisonReport } from '@/pedagogy';
 import { useLabStore } from '@/data/store';
 import { isUsableTrial, readParam } from '@/data/integrity';
 import {
@@ -21,9 +22,11 @@ const FIELDS: Array<{ key: keyof CorneringParams; label: string; symbol: string;
 
 export default function CorneringRunner({
   exp,
+  report,
   notify,
 }: {
   exp: Experiment;
+  report: ComparisonReport;
   notify: (message: string, tone: 'ok' | 'err') => void;
 }) {
   const addTrial = useLabStore((s) => s.addTrial);
@@ -112,6 +115,25 @@ export default function CorneringRunner({
           <span className="num rounded border border-line px-1.5 py-0.5 text-[9px] tracking-wider text-mist-600">
             MODEL {CORNERING_MODEL_VERSION}
           </span>
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px]">
+          {report.independent ? (
+            <span className="rounded border border-race-500/40 bg-race-500/10 px-2 py-0.5 font-bold text-race-400">
+              自变量 {report.independent.name} {report.independent.symbol}
+            </span>
+          ) : (
+            <span className="rounded border border-race-500/50 bg-race-500/15 px-2 py-0.5 font-bold text-race-400">未设自变量</span>
+          )}
+          {report.controlled.map((v) => (
+            <span key={v.id} className="rounded border border-signal-amber/40 bg-signal-amber/10 px-2 py-0.5 font-semibold text-signal-amber">
+              控制 {v.symbol} 保持基准值
+            </span>
+          ))}
+          {report.baseline && (
+            <span className="num text-[10px] text-mist-500">
+              基准：v={readParam(report.baseline, 'speedKmh') ?? '—'} · R={readParam(report.baseline, 'radiusM') ?? '—'} · μ={readParam(report.baseline, 'mu') ?? '—'}
+            </span>
+          )}
         </div>
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
           {FIELDS.map((f) => (
@@ -221,20 +243,20 @@ export default function CorneringRunner({
         </p>
       )}
 
-      {/* 进度反馈 */}
+      {/* 进度反馈：四类计数口径见 Method Coach */}
       <div className="flex flex-wrap items-center gap-3 rounded-lg border border-line bg-carbon-900/70 px-4 py-3">
         <div className="flex gap-1">
           {[0, 1, 2].map((i) => (
-            <span key={i} className={`h-1.5 w-8 rounded-sm ${i < completed.length ? 'bg-tele-400' : 'bg-carbon-700'}`} />
+            <span key={i} className={`h-1.5 w-8 rounded-sm ${i < report.counts.distinct ? 'bg-tele-400' : 'bg-carbon-700'}`} />
           ))}
         </div>
         <p className="num text-xs font-bold text-mist-300">
-          有效试跑 {completed.length} / 3
+          合格对照 {report.counts.eligible} 条 · 不同取值 {report.counts.distinct} / 3
         </p>
-        <p className={`text-[11px] ${completed.length >= 3 ? 'font-semibold text-tele-300' : 'text-mist-500'}`}>
-          {completed.length >= 3
+        <p className={`text-[11px] ${report.collectReady ? 'font-semibold text-tele-300' : 'text-mist-500'}`}>
+          {report.collectReady
             ? '采集阶段退出条件已满足 —— 可在上方阶段追踪器标记完成'
-            : '采集阶段要求至少 3 次已完成试跑（手动运行，逐条保存）'}
+            : (report.collectMissing[0] ?? '保持控制变量与基准一致，并改变自变量取值后运行新试跑')}
         </p>
       </div>
 

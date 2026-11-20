@@ -4,6 +4,7 @@
  * 原则：无效记录保留原值并标记 invalid，不删除、不参与有效计数与图表。
  */
 import type { Experiment, ReportDoc, StageId, StageStatus, Trial } from './schema';
+import { normalizeCorneringVariables } from './variables';
 
 export const isFiniteNumber = (v: unknown): v is number =>
   typeof v === 'number' && Number.isFinite(v);
@@ -123,7 +124,7 @@ export function sanitizeExperiment(e: unknown): Experiment | null {
   if (typeof exp.id !== 'string' || exp.id === '' || typeof exp.title !== 'string') return null;
   if (!Array.isArray(exp.trials)) return null;
   const trials = exp.trials.map(sanitizeTrial).filter((t): t is Trial => t !== null);
-  return {
+  const base: Experiment = {
     ...(exp as Experiment),
     trials,
     variables: Array.isArray(exp.variables) ? exp.variables : [],
@@ -133,6 +134,16 @@ export function sanitizeExperiment(e: unknown): Experiment | null {
     createdAt: typeof exp.createdAt === 'string' ? exp.createdAt : new Date().toISOString(),
     updatedAt: typeof exp.updatedAt === 'string' ? exp.updatedAt : new Date().toISOString(),
   };
+  if (base.category === 'cornering') {
+    const norm = normalizeCorneringVariables(base);
+    return {
+      ...base,
+      variables: norm.variables,
+      variablesVersion: norm.variablesVersion,
+      legacyMigrationNote: norm.legacyMigrationNote ?? base.legacyMigrationNote,
+    };
+  }
+  return base;
 }
 
 export interface PersistedShape {

@@ -118,6 +118,12 @@ export interface Experiment {
   tags: string[];
   createdAt: string;
   updatedAt: string;
+  /** 变量契约版本：2 = 规范键（speedKmh/radiusM/mu/lateralAccelMs2） */
+  variablesVersion?: number;
+  /** 旧字段迁移说明（读取兼容时写入，供页面提示） */
+  legacyMigrationNote?: string;
+  /** 方法编辑后的对照资格重算说明 */
+  methodNote?: string;
 }
 
 export interface ReportDoc {

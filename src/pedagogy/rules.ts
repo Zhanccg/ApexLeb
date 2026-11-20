@@ -4,6 +4,7 @@
  */
 import type { Experiment, StageId } from '@/data/schema';
 import { trialInvalidReason } from '@/data/integrity';
+import { evaluateComparison } from './comparison';
 import { STAGE_ORDER } from './stages';
 
 export interface StageCheck {
@@ -22,6 +23,12 @@ export function checkStageCompletion(exp: Experiment, stage: StageId): StageChec
         ? { ok: true, reason: '假设与依据已记录' }
         : { ok: false, reason: '需要假设陈述与物理依据' };
     case 'design': {
+      if (exp.category === 'cornering') {
+        const report = evaluateComparison(exp);
+        return report.roleIssues.length === 0
+          ? { ok: true, reason: '变量角色合法：单一自变量 + 固定因变量 ay + 完整控制变量' }
+          : { ok: false, reason: report.roleIssues.join('；') };
+      }
       const roles = new Set(exp.variables.map((v) => v.role));
       const ok = roles.has('independent') && roles.has('dependent') && roles.has('controlled');
       return ok
@@ -29,6 +36,12 @@ export function checkStageCompletion(exp: Experiment, stage: StageId): StageChec
         : { ok: false, reason: '变量表需同时包含自变量、因变量与控制变量' };
     }
     case 'collect': {
+      if (exp.category === 'cornering') {
+        const report = evaluateComparison(exp);
+        return report.collectReady
+          ? { ok: true, reason: `合格对照 ${report.counts.eligible} 条 · 不同自变量取值 ${report.counts.distinct} 个` }
+          : { ok: false, reason: report.collectMissing.join('；') };
+      }
       const done = exp.trials.filter((t) => t.status === 'completed' && trialInvalidReason(t) === null).length;
       return done >= 3
         ? { ok: true, reason: `已完成 ${done} 次试跑` }
