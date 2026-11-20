@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   fmtNum,
+  fmtParam,
+  fmtPercent,
+  fmtTick,
   isUsableTrial,
   parsePersistedRaw,
   readChannel,
@@ -248,6 +251,33 @@ describe('预置制动示例披露回填（T06 兼容）', () => {
       updatedAt: 'x',
     });
     expect(out?.dataSourceNote).toBeUndefined();
+  });
+});
+
+describe('FIX-03 统一数值格式化出口', () => {
+  it('fmtParam 保留输入精度（不取整不截断）', () => {
+    expect(fmtParam(54.5)).toBe('54.5');
+    expect(fmtParam(50.5)).toBe('50.5');
+    expect(fmtParam(1)).toBe('1');
+    expect(fmtParam(0.855)).toBe('0.855');
+    expect(fmtParam(0.001)).toBe('0.001');
+    expect(fmtParam(72.25)).toBe('72.25');
+    expect(fmtParam(null)).toBe('非有限');
+    expect(fmtParam(Number.NaN)).toBe('非有限');
+  });
+  it('fmtNum 指标固定小数位', () => {
+    expect(fmtNum(4.587155, 2)).toBe('4.59');
+    expect(fmtNum(79.7309, 2)).toBe('79.73');
+  });
+  it('fmtPercent 利用率百分比 1 位', () => {
+    expect(fmtPercent(0.458715)).toBe('45.9');
+    expect(fmtPercent(1.2742)).toBe('127.4');
+    expect(fmtPercent(undefined)).toBe('非有限');
+  });
+  it('fmtTick 刻度最多两位去零', () => {
+    expect(fmtTick(54.5)).toBe('54.5');
+    expect(fmtTick(4.587155)).toBe('4.59');
+    expect(fmtTick(90)).toBe('90');
   });
 });
 

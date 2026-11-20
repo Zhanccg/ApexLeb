@@ -1,7 +1,7 @@
 import type { Experiment } from '@/data/schema';
 import type { ComparisonReport } from '@/pedagogy';
 import { readParam } from '@/data/integrity';
-import { fmtNum } from '@/data/integrity';
+import { fmtParam } from '@/data/integrity';
 
 const TONE_STYLE = {
   danger: 'border-race-500/50 bg-race-500/10 text-race-400',
@@ -50,7 +50,7 @@ export default function MethodCoach({ exp, report }: { exp: Experiment; report: 
         ))}
         {baseline && (
           <span className="num ml-auto text-[10px] text-mist-500" title={baseline.id}>
-            基准试跑 #{String(baseline.index).padStart(2, '0')}（{baseline.id}）：v={fmtNum(readParam(baseline, 'speedKmh'), 0)} km/h · R={fmtNum(readParam(baseline, 'radiusM'), 0)} m · μ={fmtNum(readParam(baseline, 'mu'))}
+            基准试跑 #{String(baseline.index).padStart(2, '0')}（{baseline.id}）：v={fmtParam(readParam(baseline, 'speedKmh'))} km/h · R={fmtParam(readParam(baseline, 'radiusM'))} m · μ={fmtParam(readParam(baseline, 'mu'))}
           </span>
         )}
       </div>

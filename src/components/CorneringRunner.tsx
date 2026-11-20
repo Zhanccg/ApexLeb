@@ -12,12 +12,10 @@ import {
 import { G } from '@/engine/constants';
 import { Button } from '@/components/ui';
 
-const r4 = (n: number) => Number(n.toFixed(4));
-
 const FIELDS: Array<{ key: keyof CorneringParams; label: string; symbol: string; unit: string; step: string; hint: string }> = [
-  { key: 'speedKmh', label: '车辆速度', symbol: 'v', unit: 'km/h', step: '1', hint: '内部换算为 m/s 参与计算' },
-  { key: 'radiusM', label: '弯道半径', symbol: 'R', unit: 'm', step: '1', hint: '必须大于 0' },
-  { key: 'mu', label: '路面附着系数', symbol: 'μ', unit: '—', step: '0.05', hint: '必须大于 0' },
+  { key: 'speedKmh', label: '车辆速度', symbol: 'v', unit: 'km/h', step: 'any', hint: '内部换算为 m/s 参与计算；支持小数输入' },
+  { key: 'radiusM', label: '弯道半径', symbol: 'R', unit: 'm', step: 'any', hint: '必须大于 0；支持小数输入' },
+  { key: 'mu', label: '路面附着系数', symbol: 'μ', unit: '—', step: 'any', hint: '必须大于 0；支持小数输入' },
 ];
 
 export default function CorneringRunner({
@@ -68,25 +66,26 @@ export default function CorneringRunner({
     setComputeError(null);
     const res = comp.result;
     const vMs = check.value.speedKmh / 3.6;
+    // FIX-03：存储保留完整计算精度，显示/导出统一由格式化出口负责舍入
     const samples = Array.from({ length: 25 }, (_, i) => {
       const t = i / 6;
       return {
         t: Number(t.toFixed(3)),
         channels: {
           speed: check.value.speedKmh,
-          lateralAccelMs2: r4(res.lateralAccelMs2),
-          gripUtilization: r4(res.gripUtilization),
-          distance: r4(vMs * t),
+          lateralAccelMs2: res.lateralAccelMs2,
+          gripUtilization: res.gripUtilization,
+          distance: vMs * t,
         },
       };
     });
     const trial = addTrial(exp.id, {
       params: { ...check.value },
       metrics: {
-        lateralAccelMs2: r4(res.lateralAccelMs2),
-        gripUtilization: r4(res.gripUtilization),
-        limitSpeedKmh: r4(res.limitSpeedKmh),
-        limitSpeedMs: r4(res.limitSpeedMs),
+        lateralAccelMs2: res.lateralAccelMs2,
+        gripUtilization: res.gripUtilization,
+        limitSpeedKmh: res.limitSpeedKmh,
+        limitSpeedMs: res.limitSpeedMs,
       },
       samples,
       modelVersion: CORNERING_MODEL_VERSION,

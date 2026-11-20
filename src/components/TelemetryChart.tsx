@@ -1,4 +1,5 @@
 /** 轻量 SVG 遥测曲线：零依赖，直接渲染统一数据结构中的采样序列 */
+import { fmtTick } from '@/data/integrity';
 
 export interface SeriesPoint {
   x: number;
@@ -57,13 +58,13 @@ export function TelemetryChart({
         <g key={i}>
           <line x1={PAD.l} x2={W - PAD.r} y1={sy(v)} y2={sy(v)} stroke="#1c2634" strokeDasharray="3 5" />
           <text x={PAD.l - 6} y={sy(v) + 3.5} textAnchor="end" fontSize="9.5" fill="#647182" fontFamily="JetBrains Mono, monospace">
-            {v >= 100 ? v.toFixed(0) : v.toFixed(1)}
+            {fmtTick(v)}
           </text>
         </g>
       ))}
       {[xMin, (xMin + xMax) / 2, xMax].map((v, i) => (
         <text key={i} x={sx(v)} y={H - 8} textAnchor={i === 0 ? 'start' : i === 2 ? 'end' : 'middle'} fontSize="9.5" fill="#647182" fontFamily="JetBrains Mono, monospace">
-          {v.toFixed(v >= 10 ? 0 : 2)}
+          {fmtTick(v)}
         </text>
       ))}
       {reference && reference.y <= yMax && (

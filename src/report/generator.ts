@@ -5,7 +5,7 @@
  */
 import type { Experiment, ReportDoc } from '@/data/schema';
 import { CATEGORY_LABEL, DIRECTION_LABEL, ROLE_LABEL } from '@/data/schema';
-import { fmtNum, isUsableTrial, readMetric, readParam } from '@/data/integrity';
+import { fmtNum, fmtParam, isUsableTrial, readMetric, readParam } from '@/data/integrity';
 import { CORNERING_MODEL_VERSION } from '@/engine/cornering';
 import { STAGES, checkFindingEvidence, evaluateComparison, type ComparisonReport } from '@/pedagogy';
 
@@ -115,7 +115,7 @@ export function renderReportMarkdown(exp: Experiment): string {
   lines.push('');
   if (baseline) {
     lines.push(
-      `基准试跑 #${String(baseline.index).padStart(2, '0')}（${baseline.id}）：v = ${fmtNum(readParam(baseline, 'speedKmh'), 0)} km/h · R = ${fmtNum(readParam(baseline, 'radiusM'), 0)} m · μ = ${fmtNum(readParam(baseline, 'mu'))}。`,
+      `基准试跑 #${String(baseline.index).padStart(2, '0')}（${baseline.id}）：v = ${fmtParam(readParam(baseline, 'speedKmh'))} km/h · R = ${fmtParam(readParam(baseline, 'radiusM'))} m · μ = ${fmtParam(readParam(baseline, 'mu'))}。`,
       '',
     );
   }
@@ -143,7 +143,7 @@ export function renderReportMarkdown(exp: Experiment): string {
       for (const t of rows) {
         const lambda = readMetric(t, 'gripUtilization');
         lines.push(
-          `| ${t.id} | ${t.index} | ${fmtNum(readParam(t, independent?.id ?? ''), 0)} | ${fmtNum(readParam(t, 'speedKmh'), 0)} | ${fmtNum(readParam(t, 'radiusM'), 0)} | ${fmtNum(readParam(t, 'mu'))} | ${fmtNum(readMetric(t, 'lateralAccelMs2'))} | ${lambda === undefined ? '—' : (lambda * 100).toFixed(1)} | ${fmtNum(readMetric(t, 'limitSpeedKmh'))} | ${replicateIds.has(t.id) ? '是' : '否'} |`,
+          `| ${t.id} | ${t.index} | ${fmtParam(readParam(t, independent?.id ?? ''))} | ${fmtParam(readParam(t, 'speedKmh'))} | ${fmtParam(readParam(t, 'radiusM'))} | ${fmtParam(readParam(t, 'mu'))} | ${fmtNum(readMetric(t, 'lateralAccelMs2'))} | ${lambda === undefined ? '—' : (lambda * 100).toFixed(1)} | ${fmtNum(readMetric(t, 'limitSpeedKmh'))} | ${replicateIds.has(t.id) ? '是' : '否'} |`,
         );
       }
     } else {

@@ -205,3 +205,23 @@ export function sanitizePersistedState(state: PersistedShape): { experiments: Ex
 export function fmtNum(v: unknown, digits = 2): string {
   return isFiniteNumber(v) ? v.toFixed(digits) : '非有限';
 }
+
+/**
+ * FIX-03 统一数值出口：
+ * - fmtParam：原始输入参数（speedKmh/radiusM/mu）保留用户输入精度，最短往返表示，不取整不截断；
+ * - fmtNum：计算指标固定小数位（ay/临界速度默认 2 位）；
+ * - fmtPercent：附着利用率 λ 以百分比固定 1 位；
+ * - fmtTick：坐标轴刻度最多 2 位并去除多余零。
+ * 页面 / CSV / Markdown 同字段必须走同一出口。
+ */
+export function fmtParam(v: unknown): string {
+  return isFiniteNumber(v) ? String(v) : '非有限';
+}
+
+export function fmtPercent(v: unknown, digits = 1): string {
+  return isFiniteNumber(v) ? (v * 100).toFixed(digits) : '非有限';
+}
+
+export function fmtTick(v: number): string {
+  return String(Math.round(v * 100) / 100);
+}

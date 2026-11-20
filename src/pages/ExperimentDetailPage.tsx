@@ -5,7 +5,7 @@ import { DIRECTION_LABEL, ROLE_LABEL, type Conclusion, type StageId } from '@/da
 import { STAGE_MAP, checkStageCompletion, checkFindingEvidence, currentStage, evaluateComparison, stageProgress } from '@/pedagogy';
 import { generateReport, reportEvidenceBlockers } from '@/report/generator';
 import { G } from '@/engine/constants';
-import { fmtNum, isUsableTrial, readChannel, readMetric, readParam, samplesOf, trialInvalidReason } from '@/data/integrity';
+import { fmtNum, fmtParam, isUsableTrial, readChannel, readMetric, readParam, samplesOf, trialInvalidReason } from '@/data/integrity';
 import { Button, CategoryBadge, EmptyState, Panel, StageSegments, Toast } from '@/components/ui';
 import StageTracker from '@/components/StageTracker';
 import CorneringRunner from '@/components/CorneringRunner';
@@ -348,9 +348,9 @@ export default function ExperimentDetailPage() {
                               <td className="num py-2 pr-2 text-mist-500">
                                 {Number.isFinite(t.index) ? String(t.index).padStart(2, '0') : '—'}
                               </td>
-                              <td className="num py-2 pr-2 font-bold text-signal-amber">{fmtNum(readParam(t, 'speedKmh'), 0)}</td>
-                              <td className="num py-2 pr-2 text-mist-300">{fmtNum(readParam(t, 'radiusM'), 0)}</td>
-                              <td className="num py-2 pr-2 text-mist-300">{fmtNum(readParam(t, 'mu'))}</td>
+                              <td className="num py-2 pr-2 font-bold text-signal-amber">{fmtParam(readParam(t, 'speedKmh'))}</td>
+                              <td className="num py-2 pr-2 text-mist-300">{fmtParam(readParam(t, 'radiusM'))}</td>
+                              <td className="num py-2 pr-2 text-mist-300">{fmtParam(readParam(t, 'mu'))}</td>
                               <td className="num py-2 pr-2 text-signal-ice">{fmtNum(readMetric(t, 'lateralAccelMs2'))}</td>
                               <td className={`num py-2 pr-2 font-bold ${over ? 'text-race-400' : 'text-tele-300'}`}>
                                 {lambda === undefined ? '非有限' : `${(lambda * 100).toFixed(1)}%`}
@@ -431,7 +431,7 @@ export default function ExperimentDetailPage() {
                       }`}
                     >
                       <td className="num py-2 pr-2 text-mist-500">{String(t.index).padStart(2, '0')}</td>
-                      <td className="num py-2 pr-2 font-bold text-signal-amber">{fmtNum(readParam(t, 'mu'))}</td>
+                      <td className="num py-2 pr-2 font-bold text-signal-amber">{fmtParam(readParam(t, 'mu'))}</td>
                       <td className="num py-2 pr-2 text-mist-100">{fmtNum(readMetric(t, 'brakeDistance'))} m</td>
                       <td className="num py-2 pr-2 text-mist-500">{fmtNum(readMetric(t, 'stopTime'))} s</td>
                       <td className="py-2"><Sparkline values={samplesOf(t).map((s) => readChannel(s, 'speed')).filter((v): v is number => v !== undefined)} color={trial?.id === t.id ? '#00d2be' : '#647182'} /></td>

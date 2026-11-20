@@ -3,7 +3,7 @@ import type { Experiment } from '@/data/schema';
 import { DIRECTION_LABEL } from '@/data/schema';
 import { checkFindingEvidence, type ComparisonReport } from '@/pedagogy';
 import { useLabStore } from '@/data/store';
-import { fmtNum, readMetric, readParam } from '@/data/integrity';
+import { fmtNum, fmtParam, readMetric, readParam } from '@/data/integrity';
 import { downloadExperimentCsv } from '@/report/csv';
 import { G } from '@/engine/constants';
 import { Button } from '@/components/ui';
@@ -189,7 +189,7 @@ export default function AnalysisWorkbench({
                 <tr key={t.id} className={`border-b border-line/50 last:border-0 ${selected ? 'bg-race-500/8' : ''}`}>
                   <td className="num px-3 py-2 text-mist-500">{String(t.index).padStart(2, '0')}</td>
                   <td className="num px-3 py-2 text-[10px] text-mist-500" title={t.id}>{t.id}</td>
-                  <td className="num px-3 py-2 font-bold text-signal-amber">{fmtNum(readParam(t, indKey), 0)}</td>
+                  <td className="num px-3 py-2 font-bold text-signal-amber">{fmtParam(readParam(t, indKey))}</td>
                   <td className="num px-3 py-2 text-signal-ice">{fmtNum(readMetric(t, 'lateralAccelMs2'))}</td>
                   <td className="num px-3 py-2 text-tele-300">{lambda === undefined ? '非有限' : `${(lambda * 100).toFixed(1)}%`}</td>
                   <td className="num px-3 py-2 text-signal-violet">{fmtNum(readMetric(t, 'limitSpeedKmh'))}</td>

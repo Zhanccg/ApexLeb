@@ -155,6 +155,16 @@ describe('T06 报告证据链与数据一致性', () => {
     expect(blockers.join()).toContain('模型局限性');
   });
 
+  it('FIX-03：小数参数 Markdown 保留输入精度且与引擎重算一致', () => {
+    const dec = [mkTrial(1, 54.5, 50.5), mkTrial(2, 72.5, 50.5), mkTrial(3, 90.5, 50.5)];
+    const md = renderReportMarkdown(mkExp(dec));
+    const recomputed = computeCorneringRun({ speedKmh: 54.5, radiusM: 50.5, mu: 1 });
+    if (!recomputed.ok) throw new Error('compute failed');
+    expect(md).toContain(`| trial-1 | 1 | 54.5 | 54.5 | 50.5 | 1 | ${recomputed.result.lateralAccelMs2.toFixed(2)} |`);
+    expect(md).toContain('v = 54.5 km/h · R = 50.5 m · μ = 1');
+    expect(md).not.toContain('| 55 | 55 |');
+  });
+
   it('generateReport 标记 report 阶段完成且标题规范', () => {
     const doc = generateReport(mkExp(standard));
     expect(doc.title).toBe('研究报告：车速与侧向加速度');

@@ -226,6 +226,15 @@ describe('FIX-01：关键参数完整性与基准选择', () => {
     expect(report.baseline?.id).toBe('t1');
     expect(report.collectReady).toBe(true);
   });
+
+  it('FIX-03 G：小数参数不影响对照资格与取值计数', () => {
+    const report = evaluateComparison(mkExp([mkTrial(1, 54.5, 50.5), mkTrial(2, 72.5, 50.5), mkTrial(3, 90.5, 50.5)]));
+    expect(report.counts.eligible).toBe(3);
+    expect(report.distinctValues).toEqual([54.5, 72.5, 90.5]);
+    expect(report.collectReady).toBe(true);
+    expect(report.baseline?.params.speedKmh).toBe(54.5);
+    expect(report.baseline?.params.radiusM).toBe(50.5);
+  });
 });
 
 describe('变量角色合法性（反馈 A / B）', () => {

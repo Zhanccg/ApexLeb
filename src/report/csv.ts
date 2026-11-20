@@ -6,7 +6,7 @@
  */
 import type { Experiment } from '@/data/schema';
 import type { ComparisonReport } from '@/pedagogy';
-import { readMetric, readParam, trialInvalidReason } from '@/data/integrity';
+import { fmtPercent, readMetric, readParam, trialInvalidReason } from '@/data/integrity';
 
 export type CsvScope = 'raw' | 'eligible';
 
@@ -68,7 +68,7 @@ export function buildExperimentCsv(_exp: Experiment, report: ComparisonReport, s
         raw(readParam(t, 'radiusM')),
         raw(readParam(t, 'mu')),
         num(readMetric(t, 'lateralAccelMs2'), 2),
-        num(lambda === undefined ? undefined : lambda * 100, 1),
+        fmtPercent(lambda),
         num(readMetric(t, 'limitSpeedKmh'), 2),
         num(readMetric(t, 'limitSpeedMs'), 2),
         escape(STATUS_LABEL[t.status] ?? t.status),

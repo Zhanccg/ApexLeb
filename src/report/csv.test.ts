@@ -155,6 +155,26 @@ describe('CSV 导出（T05）', () => {
     expect(repM.eligible.map((t) => t.id)).not.toContain('trial-6');
   });
 
+  it('FIX-03：小数参数 CSV 保留输入精度且与引擎重算一致', () => {
+    const dec = [mkTrial(1, 54.5, 50.5), mkTrial(2, 72.5, 50.5), mkTrial(3, 90.5, 50.5)];
+    const expD = mkExp(dec);
+    const repD = evaluateComparison(expD);
+    expect(repD.collectReady).toBe(true);
+    for (const scope of ['raw', 'eligible'] as const) {
+      const lines = buildExperimentCsv(expD, repD, scope).slice(1).trim().split('\r\n');
+      const cells = lines.find((l) => l.startsWith('trial-1,'))!.split(',');
+      expect(cells[3]).toBe('54.5');
+      expect(cells[5]).toBe('54.5');
+      expect(cells[6]).toBe('50.5');
+      expect(cells[7]).toBe('1');
+      const recomputed = computeCorneringRun({ speedKmh: 54.5, radiusM: 50.5, mu: 1 });
+      if (!recomputed.ok) throw new Error('compute failed');
+      expect(cells[8]).toBe(recomputed.result.lateralAccelMs2.toFixed(2));
+      expect(cells[9]).toBe((recomputed.result.gripUtilization * 100).toFixed(1));
+      expect(cells[10]).toBe(recomputed.result.limitSpeedKmh.toFixed(2));
+    }
+  });
+
   it('每行都带试跑 ID 与时间戳', () => {
     const lines = buildExperimentCsv(exp, report, 'raw').slice(1).trim().split('\r\n').slice(1);
     for (const l of lines) {
