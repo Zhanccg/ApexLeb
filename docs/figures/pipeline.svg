@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 150" font-family="'Segoe UI', 'Microsoft YaHei', sans-serif">
+  <rect width="1000" height="150" rx="10" fill="#0d1219"/>
+  <rect x="0.5" y="0.5" width="999" height="149" rx="10" fill="none" stroke="#1c2634"/>
+  <text x="24" y="30" font-size="13" font-weight="700" letter-spacing="2" fill="#8b98a9">科研七阶段 · 不允许跳步的流水线</text>
+  <line x1="60" y1="82" x2="940" y2="82" stroke="#273344" stroke-width="2"/>
+  <g font-size="12" font-weight="700" text-anchor="middle">
+    <g><circle cx="60" cy="82" r="17" fill="#0d1219" stroke="#e10600" stroke-width="2"/><text x="60" y="87" fill="#ff3b2e" font-family="'JetBrains Mono', monospace">1</text><text x="60" y="122" fill="#eef3f8">提出问题</text></g>
+    <g><circle cx="206" cy="82" r="17" fill="#0d1219" stroke="#ffb800" stroke-width="2"/><text x="206" y="87" fill="#ffb800" font-family="'JetBrains Mono', monospace">2</text><text x="206" y="122" fill="#eef3f8">建立假设</text></g>
+    <g><circle cx="352" cy="82" r="17" fill="#0d1219" stroke="#a3e635" stroke-width="2"/><text x="352" y="87" fill="#a3e635" font-family="'JetBrains Mono', monospace">3</text><text x="352" y="122" fill="#eef3f8">实验设计</text></g>
+    <g><circle cx="498" cy="82" r="17" fill="#0d1219" stroke="#00d2be" stroke-width="2"/><text x="498" y="87" fill="#00d2be" font-family="'JetBrains Mono', monospace">4</text><text x="498" y="122" fill="#eef3f8">数据采集</text></g>
+    <g><circle cx="644" cy="82" r="17" fill="#0d1219" stroke="#4cc3ff" stroke-width="2"/><text x="644" y="87" fill="#4cc3ff" font-family="'JetBrains Mono', monospace">5</text><text x="644" y="122" fill="#eef3f8">分析数据</text></g>
+    <g><circle cx="790" cy="82" r="17" fill="#0d1219" stroke="#a78bfa" stroke-width="2"/><text x="790" y="87" fill="#a78bfa" font-family="'JetBrains Mono', monospace">6</text><text x="790" y="122" fill="#eef3f8">得出结论</text></g>
+    <g><circle cx="936" cy="82" r="17" fill="#0d1219" stroke="#f471b5" stroke-width="2"/><text x="936" y="87" fill="#f471b5" font-family="'JetBrains Mono', monospace">7</text><text x="936" y="122" fill="#eef3f8">撰写报告</text></g>
+  </g>
+  <g fill="#273344">
+    <path d="M128 78 l8 4 -8 4 z"/><path d="M274 78 l8 4 -8 4 z"/><path d="M420 78 l8 4 -8 4 z"/>
+    <path d="M566 78 l8 4 -8 4 z"/><path d="M712 78 l8 4 -8 4 z"/><path d="M858 78 l8 4 -8 4 z"/>
+  </g>
+  <text x="24" y="142" font-size="10" fill="#647182">每阶段含赛车工程类比、操作要点、常见误区与退出条件；退出条件未满足时推进按钮禁用</text>
+</svg>

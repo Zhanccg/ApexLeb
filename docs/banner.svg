@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 320" font-family="Rajdhani, 'Segoe UI', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <pattern id="grid" width="44" height="44" patternUnits="userSpaceOnUse">
+      <path d="M44 0H0V44" fill="none" stroke="#1c2634" stroke-width="1"/>
+    </pattern>
+    <linearGradient id="fade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#00d2be" stop-opacity="0.30"/>
+      <stop offset="1" stop-color="#00d2be" stop-opacity="0.02"/>
+    </linearGradient>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="26"/>
+    </filter>
+    <pattern id="stripes" width="22" height="22" patternUnits="userSpaceOnUse" patternTransform="rotate(-55)">
+      <rect width="10" height="22" fill="#e10600"/>
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="320" fill="#05070b"/>
+  <rect width="1200" height="320" fill="url(#grid)"/>
+  <circle cx="150" cy="60" r="90" fill="#e10600" opacity="0.16" filter="url(#glow)"/>
+  <circle cx="1050" cy="270" r="100" fill="#00d2be" opacity="0.12" filter="url(#glow)"/>
+  <rect x="1104" y="0" width="96" height="320" fill="url(#stripes)" opacity="0.18"/>
+
+  <!-- apex mark -->
+  <g transform="translate(64,74)">
+    <rect width="112" height="112" rx="18" fill="#111823" stroke="#273344"/>
+    <path d="M21 84 L56 21 L91 84 L72 84 L56 52 L40 84 Z" fill="#e10600"/>
+    <rect x="45.5" y="84" width="21" height="9" fill="#00d2be"/>
+  </g>
+
+  <text x="204" y="132" font-size="76" font-weight="700" letter-spacing="10" fill="#eef3f8">APEX<tspan fill="#ff3b2e">LAB</tspan></text>
+  <text x="208" y="170" font-size="21" letter-spacing="4" fill="#8b98a9">极速科研实验室 · RACING DYNAMICS × RESEARCH METHOD</text>
+
+  <g font-size="13" letter-spacing="2" font-weight="600">
+    <rect x="208" y="188" width="150" height="26" rx="6" fill="#e10600" opacity="0.14"/>
+    <rect x="208" y="188" width="150" height="26" rx="6" fill="none" stroke="#e10600" stroke-opacity="0.5"/>
+    <text x="222" y="206" fill="#ff3b2e">STUDYHACK 2026</text>
+    <rect x="370" y="188" width="196" height="26" rx="6" fill="#00d2be" opacity="0.10"/>
+    <rect x="370" y="188" width="196" height="26" rx="6" fill="none" stroke="#00d2be" stroke-opacity="0.45"/>
+    <text x="384" y="206" fill="#5ce8d8">QODER 高校创造力大赛</text>
+  </g>
+
+  <!-- telemetry trace -->
+  <g>
+    <line x1="64" y1="252" x2="1080" y2="252" stroke="#ffb800" stroke-width="1.4" stroke-dasharray="7 5" opacity="0.8"/>
+    <text x="1080" y="244" text-anchor="end" font-size="12" fill="#ffb800" font-family="'JetBrains Mono', monospace">ay_max = μg</text>
+    <path d="M64 292 L240 276 L420 262 L600 246 L780 224 L960 202 L1080 188 L1080 306 L64 306 Z" fill="url(#fade)"/>
+    <path d="M64 292 L240 276 L420 262 L600 246 L780 224 L960 202 L1080 188" fill="none" stroke="#00d2be" stroke-width="2.4" stroke-linejoin="round"/>
+    <path d="M64 300 L240 296 L420 288 L600 284 L780 272 L960 266 L1080 258" fill="none" stroke="#a78bfa" stroke-width="1.6" stroke-dasharray="2 4" opacity="0.9"/>
+    <g fill="#05070b" stroke="#00d2be" stroke-width="2">
+      <circle cx="64" cy="292" r="4"/><circle cx="240" cy="276" r="4"/><circle cx="420" cy="262" r="4"/>
+      <circle cx="600" cy="246" r="4"/><circle cx="780" cy="224" r="4"/><circle cx="960" cy="202" r="4"/>
+    </g>
+    <circle cx="1080" cy="188" r="4.6" fill="#05070b" stroke="#ffb800" stroke-width="2"/>
+    <text x="64" y="316" font-size="11" letter-spacing="3" fill="#647182" font-family="'JetBrains Mono', monospace">TELEMETRY · ay–v TRACE · MODEL cornering-flat-noaero-v1</text>
+  </g>
+</svg>
