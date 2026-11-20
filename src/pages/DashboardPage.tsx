@@ -28,51 +28,68 @@ export default function DashboardPage() {
       })
       .sort((a, b) => a.x - b.x) ?? [];
 
-  const quickStart = (tplId: string) => {
-    const id = createFromTemplate(tplId);
-    if (id) navigate(`/experiments/${id}`);
+  const startChallenge = () => {
+    const tpl = TEMPLATES.find((t) => t.runnable && t.category === 'cornering');
+    const id = tpl ? createFromTemplate(tpl.id) : null;
+    navigate(id ? `/experiments/${id}` : '/experiments');
   };
 
   return (
     <div className="space-y-6">
-      {/* Hero */}
+      {/* Hero：首屏 10 秒理解是什么 / 学什么 / 点哪里 */}
       <section className="fade-up panel telemetry-grid relative overflow-hidden">
         <div className="race-stripes absolute inset-y-0 right-0 w-24 opacity-15" />
         <div className="absolute -top-24 -left-24 h-64 w-64 rounded-full bg-race-500/12 blur-3xl" />
         <div className="absolute -right-16 -bottom-24 h-64 w-64 rounded-full bg-tele-500/10 blur-3xl" />
-        <div className="relative px-6 py-8 sm:px-8">
+        <div className="relative px-6 py-8 sm:px-8 sm:py-10">
           <p className="num text-[11px] tracking-[0.35em] text-tele-400">RESEARCH TELEMETRY SYSTEM · ONLINE</p>
-          <h1 className="font-display mt-3 text-4xl font-bold tracking-wide text-mist-100 sm:text-5xl">
-            像调校赛车一样<span className="text-race-400">做科研</span>
+          <h1 className="font-display mt-3 text-2xl font-bold leading-tight tracking-wide text-mist-100 sm:text-5xl">
+            不只是做实验，
+            <br />
+            更要学会<span className="text-race-400">如何正确做实验</span>。
           </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-mist-500">
-            ApexLab 把科学研究流程拆成七个可执行的阶段：提出问题、建立假设、实验设计、数据采集、分析、结论与报告。
-            每个阶段都有赛车工程类比与退出条件——不跳步、不臆断，用遥测数据说话。
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-mist-500 sm:text-base">
+            通过一次赛车过弯对照实验，发现混杂变量、纠正实验设计，并利用真实计算数据形成可追溯的研究结论。
           </p>
-          <div className="mt-5 flex flex-wrap gap-3">
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <button
+              onClick={startChallenge}
+              className="group relative inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded bg-race-500 px-6 py-3 text-base font-bold text-white shadow-[0_0_28px_rgba(225,6,0,0.45)] transition-transform hover:scale-[1.03] active:scale-95 sm:w-auto"
+            >
+              <span className="absolute inset-0 rounded bg-race-400/40 blur-md led" aria-hidden="true" />
+              <svg viewBox="0 0 24 24" className="relative h-4 w-4" fill="currentColor"><path d="M6 3v18h2v-7h11l-2.5-4L19 6H8V3H6z" /></svg>
+              <span className="relative">开始第一次科研挑战</span>
+            </button>
             <Link
               to="/experiments"
-              className="inline-flex items-center gap-2 rounded bg-race-500 px-5 py-2.5 text-sm font-bold text-white shadow-[0_0_24px_rgba(225,6,0,0.4)] transition-transform hover:scale-[1.03] active:scale-95"
+              className="inline-flex w-full items-center justify-center gap-2 rounded border border-line-bright bg-carbon-800/70 px-5 py-3 text-sm font-bold text-mist-300 transition-colors hover:border-tele-500/50 hover:text-tele-300 sm:w-auto"
             >
               进入实验库
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
             </Link>
-            <Link
-              to="/learn"
-              className="inline-flex items-center gap-2 rounded border border-tele-500/40 bg-tele-500/10 px-5 py-2.5 text-sm font-bold text-tele-300 transition-colors hover:bg-tele-500/20"
-            >
-              学习科研七阶段
+            <Link to="/learn" className="text-center text-xs font-semibold text-mist-500 underline-offset-4 hover:text-tele-300 hover:underline sm:text-left">
+              先了解科研七阶段 →
             </Link>
           </div>
+          <p className="num mt-3 text-[10px] tracking-wider text-mist-600">
+            无需注册 · 数据保存在本机 · 约 3 分钟完成一次可追溯的科研闭环
+          </p>
         </div>
       </section>
 
-      {/* 统计 */}
-      <div className="fade-up grid grid-cols-2 gap-3 lg:grid-cols-4" style={{ animationDelay: '0.08s' }}>
-        <StatCard label="在册实验" value={experiments.length} accent="bg-race-500" sub="Garage 中的研究项目" />
-        <StatCard label="有效试跑" value={totalTrials} unit="次" accent="bg-tele-400" sub="已完成采集的 Trial" />
-        <StatCard label="平均流程进度" value={avgProgress} unit="%" accent="bg-signal-amber" sub="七阶段完成度均值" />
-        <StatCard label="实验报告" value={reports.length} unit="份" accent="bg-signal-violet" sub="可复现的 Markdown 报告" />
+      {/* 10 秒理解条 */}
+      <div className="grid gap-3 sm:grid-cols-3">
+        {[
+          { n: '01', c: 'text-race-400', b: 'border-race-500/40', t: 'ApexLab 是什么', d: '赛车遥测风格的科研流程训练台：把科学方法拆成七个可校验的阶段，不跳步、不臆断。' },
+          { n: '02', c: 'text-tele-300', b: 'border-tele-500/40', t: '你能学到什么', d: '控制变量、识别混杂与重复试跑、用试跑 ID 证据链支撑结论，并导出可复现报告。' },
+          { n: '03', c: 'text-signal-amber', b: 'border-signal-amber/40', t: '从哪里开始', d: '点击红色主按钮：自动创建过弯对照实验并进入假设阶段，跟着阶段追踪器走完全程。' },
+        ].map((x, i) => (
+          <div key={x.n} className={`fade-up panel border-l-2 ${x.b} p-4`} style={{ animationDelay: `${0.08 + i * 0.07}s` }}>
+            <p className={`num text-[10px] font-bold tracking-[0.3em] ${x.c}`}>{x.n}</p>
+            <p className="mt-1 text-sm font-bold text-mist-100">{x.t}</p>
+            <p className="mt-1.5 text-xs leading-relaxed text-mist-500">{x.d}</p>
+          </div>
+        ))}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-5">
@@ -80,7 +97,7 @@ export default function DashboardPage() {
         <Panel title="进行中实验 · Active Runs" className="fade-up lg:col-span-3" >
           <div className="space-y-3">
             {experiments.length === 0 && (
-              <p className="py-6 text-center text-sm text-mist-500">车库空空如也——从下方模板创建第一个实验。</p>
+              <p className="py-6 text-center text-sm text-mist-500">车库空空如也——点击上方红色主按钮，开始第一次科研挑战。</p>
             )}
             {experiments.map((exp) => {
               const stage = currentStage(exp);
@@ -131,6 +148,14 @@ export default function DashboardPage() {
         </Panel>
       </div>
 
+      {/* 统计（首屏之下，减少首屏噪音） */}
+      <div className="fade-up grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatCard label="在册实验" value={experiments.length} accent="bg-race-500" sub="Garage 中的研究项目" />
+        <StatCard label="有效试跑" value={totalTrials} unit="次" accent="bg-tele-400" sub="已完成采集的 Trial" />
+        <StatCard label="平均流程进度" value={avgProgress} unit="%" accent="bg-signal-amber" sub="七阶段完成度均值" />
+        <StatCard label="实验报告" value={reports.length} unit="份" accent="bg-signal-violet" sub="可复现的 Markdown 报告" />
+      </div>
+
       {/* 流程管线 */}
       <Panel title="科研流程管线 · Research Pipeline" className="fade-up">
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
@@ -154,24 +179,6 @@ export default function DashboardPage() {
         </div>
       </Panel>
 
-      {/* 快速开始 */}
-      <Panel title="快速发车 · Quick Launch" className="fade-up">
-        <div className="grid gap-3 md:grid-cols-3">
-          {TEMPLATES.map((tpl) => (
-            <div key={tpl.id} className="flex flex-col rounded-lg border border-line bg-carbon-800/50 p-4 transition-colors hover:border-line-bright">
-              <CategoryBadge category={tpl.category} />
-              <p className="mt-2.5 text-sm font-bold text-mist-100">{tpl.title}</p>
-              <p className="mt-1.5 flex-1 text-xs leading-relaxed text-mist-500">{tpl.brief}</p>
-              <button
-                onClick={() => quickStart(tpl.id)}
-                className="mt-3 cursor-pointer rounded border border-race-500/40 bg-race-500/10 px-3 py-2 text-xs font-bold text-race-400 transition-colors hover:bg-race-500/25 active:scale-95"
-              >
-                以此模板创建实验 →
-              </button>
-            </div>
-          ))}
-        </div>
-      </Panel>
     </div>
   );
 }

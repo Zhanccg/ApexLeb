@@ -104,7 +104,7 @@ export const useLabStore = create<LabState>()(
 
       createFromTemplate: (templateId) => {
         const tpl = TEMPLATES.find((t) => t.id === templateId);
-        if (!tpl) return null;
+        if (!tpl || !tpl.runnable) return null;
         const id = uid('exp');
         const ts = new Date().toISOString();
         const exp: Experiment = {

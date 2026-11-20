@@ -148,6 +148,10 @@ export interface ExperimentTemplate {
   variables: VariableDef[];
   tags: string[];
   brief: string;
+  /** UX-01：是否已接入完整运行流程（运行器→分析→结论→报告） */
+  runnable: boolean;
+  /** 模板可用状态说明，展示于实验库，避免误导进入无法继续的采集页 */
+  statusNote: string;
 }
 
 export const CATEGORY_LABEL: Record<ExperimentCategory, string> = {

@@ -1,0 +1,70 @@
+{
+  "desktopHome": {
+    "viewport": [
+      1440,
+      900
+    ],
+    "cta": {
+      "top": 360,
+      "bottom": 408,
+      "width": 216
+    },
+    "title": true,
+    "subtitle": true,
+    "strip": true,
+    "overflow": -15
+  },
+  "created": {
+    "id": "exp-mwox0uni-bz3tu",
+    "category": "cornering",
+    "stages": {
+      "question": "done",
+      "hypothesis": "active",
+      "design": "locked",
+      "collect": "locked",
+      "analyze": "locked",
+      "conclude": "locked",
+      "report": "locked"
+    },
+    "hypothesis": true,
+    "url": "/experiments/exp-mwox0uni-bz3tu"
+  },
+  "garage": {
+    "buttons": [
+      {
+        "label": "暂不可创建",
+        "disabled": true
+      },
+      {
+        "label": "创建实验",
+        "disabled": false
+      },
+      {
+        "label": "暂不可创建",
+        "disabled": true
+      }
+    ],
+    "legend": true,
+    "presetBadge": true,
+    "overflow": -15
+  },
+  "mobileHome": {
+    "viewport": [
+      390,
+      844
+    ],
+    "cta": {
+      "top": 360,
+      "bottom": 408,
+      "width": 308
+    },
+    "visibleInFirstScreen": true,
+    "overflow": 0
+  },
+  "mobilePersist": {
+    "experiments": 4,
+    "firstStages": "done",
+    "url": "/experiments/exp-mwox0wfz-f5d4h"
+  },
+  "consoleErrors": []
+}

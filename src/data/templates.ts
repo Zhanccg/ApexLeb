@@ -20,6 +20,8 @@ export const TEMPLATES: ExperimentTemplate[] = [
     ],
     tags: ['入门推荐', '制动', '单变量'],
     brief: '最经典的单变量实验：验证 d = v²/2μg，理解「控制变量法」。',
+    runnable: false,
+    statusNote: '预置示例同款模板：车库中的制动示例含教学扰动数据供观摩与报告演练；制动运行器尚未接入，新建后无法运行试跑。',
   },
   {
     id: 'tpl-cornering-ay',
@@ -37,8 +39,10 @@ export const TEMPLATES: ExperimentTemplate[] = [
       { id: 'radiusM', name: '弯道半径', symbol: 'R', unit: 'm', role: 'controlled', min: 0.001, max: 1000000, step: 1, defaultValue: 50, hint: '控制变量：与基准试跑保持一致；可在方法编辑器中切换为自变量。' },
       { id: 'mu', name: '路面附着系数', symbol: 'μ', unit: '—', role: 'controlled', min: 0.001, max: 100, step: 0.05, defaultValue: 1, hint: '控制变量：保持恒定以单独考察自变量的作用。' },
     ],
-    tags: ['弯道', '非线性', '平方根'],
-    brief: '体验非线性关系：为什么半径翻 4 倍，极限速度只翻 2 倍？',
+    tags: ['弯道', '非线性', '平方关系'],
+    brief: '完整科研流程：运行过弯试跑、识别混杂与重复、用证据链形成结论与报告。',
+    runnable: true,
+    statusNote: '已接入完整运行流程：试跑运行器、对照判定、分析工作台、结论与报告均可用。',
   },
   {
     id: 'tpl-aero-speed',
@@ -57,5 +61,7 @@ export const TEMPLATES: ExperimentTemplate[] = [
     ],
     tags: ['空气动力学', '平方关系'],
     brief: '理解「速度平方律」：为什么快车在高速弯反而更稳。',
+    runnable: false,
+    statusNote: '展示模板：空气动力学运行器尚未接入（赛后扩展方向），新建后采集阶段无法运行试跑。',
   },
 ];

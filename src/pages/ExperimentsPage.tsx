@@ -102,7 +102,20 @@ export default function ExperimentsPage() {
                     <h2 className="truncate text-base font-bold text-mist-100 transition-colors group-hover:text-tele-300">{exp.title}</h2>
                     <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-mist-500">{exp.question}</p>
                   </Link>
-                  <CategoryBadge category={exp.category} />
+                  <div className="flex flex-col items-end gap-1">
+                    <CategoryBadge category={exp.category} />
+                    <span
+                      className={`rounded border px-1.5 py-0.5 text-[10px] font-bold ${
+                        exp.dataSourceNote
+                          ? 'border-signal-ice/40 bg-signal-ice/10 text-signal-ice'
+                          : exp.category === 'cornering'
+                            ? 'border-tele-500/40 bg-tele-500/10 text-tele-300'
+                            : 'border-signal-amber/40 bg-signal-amber/10 text-signal-amber'
+                      }`}
+                    >
+                      {exp.dataSourceNote ? '预置示例' : exp.category === 'cornering' ? '完整流程' : '运行器未接入'}
+                    </span>
+                  </div>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {exp.tags.map((t) => (
@@ -147,21 +160,35 @@ export default function ExperimentsPage() {
 
       {/* 模板 */}
       <Panel title="实验模板 · Launch New Experiment" className="fade-up">
+        <p className="mb-3 flex flex-wrap items-center gap-2 text-[11px] text-mist-500">
+          状态图例：
+          <span className="rounded border border-tele-500/40 bg-tele-500/10 px-1.5 py-0.5 font-bold text-tele-300">完整科研流程</span>
+          <span className="rounded border border-signal-ice/40 bg-signal-ice/10 px-1.5 py-0.5 font-bold text-signal-ice">预置示例（观摩/报告演练）</span>
+          <span className="rounded border border-signal-amber/40 bg-signal-amber/10 px-1.5 py-0.5 font-bold text-signal-amber">运行器未接入（不可创建）</span>
+        </p>
         <div className="grid gap-3 md:grid-cols-3">
           {TEMPLATES.map((tpl) => (
-            <div key={tpl.id} className="flex flex-col rounded-lg border border-line bg-carbon-800/50 p-4 transition-all hover:-translate-y-0.5 hover:border-line-bright">
+            <div key={tpl.id} className={`flex flex-col rounded-lg border p-4 transition-all ${tpl.runnable ? 'border-tele-500/40 bg-carbon-800/50 hover:-translate-y-0.5 hover:border-tele-500/70' : 'border-line bg-carbon-900/60 opacity-80'}`}>
               <div className="flex items-center justify-between">
                 <CategoryBadge category={tpl.category} />
-                <span className="num text-[10px] text-mist-600">{tpl.variables.length} VARS</span>
+                <span className={`rounded border px-1.5 py-0.5 text-[10px] font-bold ${tpl.runnable ? 'border-tele-500/40 bg-tele-500/10 text-tele-300' : 'border-signal-amber/40 bg-signal-amber/10 text-signal-amber'}`}>
+                  {tpl.runnable ? '完整科研流程' : '运行器未接入'}
+                </span>
               </div>
               <p className="mt-2.5 text-sm font-bold text-mist-100">{tpl.title}</p>
               <p className="mt-1.5 flex-1 text-xs leading-relaxed text-mist-500">{tpl.brief}</p>
-              <p className="mt-2 line-clamp-2 text-[11px] text-mist-600 italic">“{tpl.question}”</p>
+              <p className="mt-2 text-[11px] leading-relaxed text-mist-600">{tpl.statusNote}</p>
               <button
                 onClick={() => launch(tpl.id)}
-                className="mt-3 cursor-pointer rounded bg-race-500 px-3 py-2 text-xs font-bold text-white shadow-[0_0_16px_rgba(225,6,0,0.3)] transition-all hover:bg-race-400 active:scale-95"
+                disabled={!tpl.runnable}
+                title={tpl.runnable ? undefined : tpl.statusNote}
+                className={`mt-3 rounded px-3 py-2 text-xs font-bold transition-all ${
+                  tpl.runnable
+                    ? 'cursor-pointer bg-race-500 text-white shadow-[0_0_16px_rgba(225,6,0,0.3)] hover:bg-race-400 active:scale-95'
+                    : 'cursor-not-allowed border border-line bg-carbon-800/60 text-mist-600'
+                }`}
               >
-                创建实验
+                {tpl.runnable ? '创建实验' : '暂不可创建'}
               </button>
             </div>
           ))}
