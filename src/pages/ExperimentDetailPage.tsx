@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useLabStore } from '@/data/store';
 import { DIRECTION_LABEL, ROLE_LABEL, type Conclusion, type StageId } from '@/data/schema';
-import { STAGE_MAP, checkStageCompletion, currentStage, evaluateComparison, stageProgress } from '@/pedagogy';
+import { STAGE_MAP, checkStageCompletion, checkFindingEvidence, currentStage, evaluateComparison, stageProgress } from '@/pedagogy';
 import { generateReport } from '@/report/generator';
 import { G } from '@/engine/constants';
 import { fmtNum, isUsableTrial, readChannel, readMetric, readParam, samplesOf, trialInvalidReason } from '@/data/integrity';
@@ -11,6 +11,7 @@ import StageTracker from '@/components/StageTracker';
 import CorneringRunner from '@/components/CorneringRunner';
 import MethodEditor from '@/components/MethodEditor';
 import MethodCoach from '@/components/MethodCoach';
+import AnalysisWorkbench from '@/components/AnalysisWorkbench';
 import { Sparkline, TelemetryChart } from '@/components/TelemetryChart';
 
 const ROLE_STYLE = {
@@ -443,10 +444,30 @@ export default function ExperimentDetailPage() {
         )}
       </Panel>
 
+      {exp.category === 'cornering' && comparison && exp.stages.analyze !== 'locked' && (
+        <Panel title="⑤ 数据分析 · 分析工作台" className="fade-up">
+          <AnalysisWorkbench exp={exp} report={comparison} notify={notify} />
+        </Panel>
+      )}
+
       <div className="grid gap-5 lg:grid-cols-2">
         {/* 分析 */}
-        <Panel title="⑤ 分析发现" className="fade-up">
-          {exp.analysis ? (
+        <Panel title={exp.category === 'cornering' && exp.stages.analyze !== 'locked' ? '⑤ 分析状态' : '⑤ 分析发现'} className="fade-up">
+          {exp.category === 'cornering' && comparison && exp.stages.analyze !== 'locked' ? (
+            <div className="space-y-2 text-xs leading-relaxed">
+              <p className="text-mist-500"><span className="font-bold text-mist-300">方法：</span>{exp.analysis?.method || '—'}</p>
+              <p className="text-mist-500"><span className="font-bold text-mist-300">模型局限：</span>{exp.analysis?.limitations || '—'}</p>
+              <p className="num font-bold text-mist-300">
+                {exp.analysis?.findings.length ?? 0} 条研究发现 · 合格对照 {comparison.counts.eligible} 条
+              </p>
+              {(exp.analysis?.findings ?? []).flatMap((f, i) =>
+                checkFindingEvidence(comparison, f).problems.map((p, n) => (
+                  <p key={`${i}-${n}`} role="alert" className="font-semibold text-signal-amber">⚠ 发现 #{i + 1}：{p}</p>
+                )),
+              )}
+              <p className="text-mist-600">在上方工作台编辑发现、勾选证据试跑并导出 CSV。</p>
+            </div>
+          ) : exp.analysis ? (
             <div className="space-y-3">
               <p className="text-xs text-mist-500"><span className="font-bold text-mist-300">方法：</span>{exp.analysis.method}</p>
               {exp.analysis.findings.map((f) => (

@@ -1,9 +1,9 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import type { Conclusion, Experiment, Hypothesis, ReportDoc, StageId, TelemetrySample, Trial } from './schema';
+import type { AnalysisFinding, Conclusion, Experiment, Hypothesis, ReportDoc, StageId, TelemetrySample, Trial } from './schema';
 import { TEMPLATES } from './templates';
 import { buildSeedExperiments } from './seed';
-import { STAGE_ORDER, canAdvanceTo, checkStageCompletion, evaluateComparison } from '@/pedagogy';
+import { STAGE_ORDER, canAdvanceTo, checkStageCompletion, checkFindingEvidence, evaluateComparison } from '@/pedagogy';
 import { parsePersistedRaw, sanitizePersistedState, trialInvalidReason, type PersistedShape } from './integrity';
 import { VARIABLES_VERSION, corneringVariables, type CorneringParamKey } from './variables';
 
@@ -38,6 +38,17 @@ interface LabState {
     },
   ) => Trial | null;
   setConclusion: (id: string, conclusion: Omit<Conclusion, 'createdAt'>) => void;
+  setAnalysisMeta: (id: string, meta: { method: string; limitations: string }) => void;
+  addFinding: (
+    id: string,
+    finding: Omit<AnalysisFinding, 'id'>,
+  ) => { ok: boolean; reason?: string };
+  updateFinding: (
+    id: string,
+    findingId: string,
+    patch: Omit<AnalysisFinding, 'id'>,
+  ) => { ok: boolean; reason?: string };
+  deleteFinding: (id: string, findingId: string) => void;
   addReport: (report: ReportDoc) => void;
   deleteReport: (id: string) => void;
   resetLab: () => void;
@@ -235,6 +246,67 @@ export const useLabStore = create<LabState>()(
         set((s) => ({
           experiments: s.experiments.map((e) =>
             e.id === id ? touch({ ...e, conclusion: { ...conclusion, createdAt: new Date().toISOString() } }) : e,
+          ),
+        })),
+
+      setAnalysisMeta: (id, meta) =>
+        set((s) => ({
+          experiments: s.experiments.map((e) => {
+            if (e.id !== id) return e;
+            const analysis = e.analysis ?? { id: uid('ana'), method: '', findings: [], createdAt: new Date().toISOString() };
+            return touch({ ...e, analysis: { ...analysis, method: meta.method, limitations: meta.limitations } });
+          }),
+        })),
+
+      addFinding: (id, finding) => {
+        const exp = get().experiments.find((e) => e.id === id);
+        if (!exp) return { ok: false, reason: '实验不存在' };
+        const candidate: AnalysisFinding = { id: uid('f'), ...finding };
+        const check = checkFindingEvidence(evaluateComparison(exp), candidate);
+        if (!check.ok) return { ok: false, reason: check.problems.join('；') };
+        set((s) => ({
+          experiments: s.experiments.map((e) => {
+            if (e.id !== id) return e;
+            const analysis = e.analysis ?? {
+              id: uid('ana'),
+              method: '绘制 ay–自变量对照曲线并比较水平间差异',
+              findings: [],
+              createdAt: new Date().toISOString(),
+            };
+            return touch({ ...e, analysis: { ...analysis, findings: [...analysis.findings, candidate] } });
+          }),
+        }));
+        return { ok: true };
+      },
+
+      updateFinding: (id, findingId, patch) => {
+        const exp = get().experiments.find((e) => e.id === id);
+        if (!exp || !exp.analysis) return { ok: false, reason: '分析记录不存在' };
+        const candidate: AnalysisFinding = { id: findingId, ...patch };
+        const check = checkFindingEvidence(evaluateComparison(exp), candidate);
+        if (!check.ok) return { ok: false, reason: check.problems.join('；') };
+        set((s) => ({
+          experiments: s.experiments.map((e) =>
+            e.id === id && e.analysis
+              ? touch({
+                  ...e,
+                  analysis: {
+                    ...e.analysis,
+                    findings: e.analysis.findings.map((f) => (f.id === findingId ? candidate : f)),
+                  },
+                })
+              : e,
+          ),
+        }));
+        return { ok: true };
+      },
+
+      deleteFinding: (id, findingId) =>
+        set((s) => ({
+          experiments: s.experiments.map((e) =>
+            e.id === id && e.analysis
+              ? touch({ ...e, analysis: { ...e.analysis, findings: e.analysis.findings.filter((f) => f.id !== findingId) } })
+              : e,
           ),
         })),
 

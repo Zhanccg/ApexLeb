@@ -14,6 +14,7 @@ export function TelemetryChart({
   area = true,
   animate = true,
   reference,
+  annotations,
 }: {
   points: SeriesPoint[];
   color?: string;
@@ -24,6 +25,8 @@ export function TelemetryChart({
   animate?: boolean;
   /** 水平参考线（如附着极限 μg），超出即变色警示 */
   reference?: { y: number; label: string; color?: string };
+  /** 逐点 annotation：直接标签（样本数 / 试跑号）与重复记录同心环 */
+  annotations?: Array<{ label?: string; rings?: number }>;
 }) {
   if (points.length < 2) return null;
   const W = 560;
@@ -108,6 +111,23 @@ export function TelemetryChart({
           strokeWidth="1.6"
         />
       ))}
+      {annotations?.map((a, i) => {
+        const p = points[i];
+        if (!p) return null;
+        const stroke = reference && p.y > reference.y ? (reference.color ?? '#ffb800') : color;
+        return (
+          <g key={`a-${i}`}>
+            {Array.from({ length: a.rings ?? 0 }, (_, r) => (
+              <circle key={r} cx={sx(p.x)} cy={sy(p.y)} r={5.5 + r * 3} fill="none" stroke={stroke} strokeWidth="1" opacity={Math.max(0.15, 0.5 - r * 0.12)} />
+            ))}
+            {a.label && (
+              <text x={sx(p.x)} y={sy(p.y) - 9 - (a.rings ?? 0) * 3} textAnchor="middle" fontSize="9" fontWeight="700" fill={stroke} fontFamily="JetBrains Mono, monospace">
+                {a.label}
+              </text>
+            )}
+          </g>
+        );
+      })}
       {xLabel && (
         <text x={W - PAD.r} y={12} textAnchor="end" fontSize="9" fill="#8b98a9" letterSpacing="1.5">
           {xLabel}

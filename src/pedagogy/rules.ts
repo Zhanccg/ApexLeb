@@ -4,7 +4,7 @@
  */
 import type { Experiment, StageId } from '@/data/schema';
 import { trialInvalidReason } from '@/data/integrity';
-import { evaluateComparison } from './comparison';
+import { evaluateComparison, checkFindingEvidence } from './comparison';
 import { STAGE_ORDER } from './stages';
 
 export interface StageCheck {
@@ -47,10 +47,23 @@ export function checkStageCompletion(exp: Experiment, stage: StageId): StageChec
         ? { ok: true, reason: `已完成 ${done} 次试跑` }
         : { ok: false, reason: `至少需要 3 次完成的试跑（当前 ${done} 次）` };
     }
-    case 'analyze':
+    case 'analyze': {
+      if (exp.category === 'cornering') {
+        if (!exp.analysis || exp.analysis.findings.length === 0) {
+          return { ok: false, reason: '需要至少一条带证据引用的研究发现（在分析工作台填写）' };
+        }
+        const report = evaluateComparison(exp);
+        const problems = exp.analysis.findings.flatMap((f, i) =>
+          checkFindingEvidence(report, f).problems.map((p) => `发现 #${i + 1}：${p}`),
+        );
+        return problems.length === 0
+          ? { ok: true, reason: `${exp.analysis.findings.length} 条研究发现证据均合格` }
+          : { ok: false, reason: problems.join('；') };
+      }
       return exp.analysis && exp.analysis.findings.length > 0
         ? { ok: true, reason: '已有分析发现' }
         : { ok: false, reason: '需要至少一条分析发现' };
+    }
     case 'conclude':
       return exp.conclusion && exp.conclusion.statement.trim().length >= 8
         ? { ok: true, reason: '结论已记录' }

@@ -2,7 +2,7 @@
  * T04 统一对照资格判定与科研方法教学反馈（规则驱动，无 LLM）。
  * 所有计数、图表筛选、阶段推进共用本模块，避免各组件判断口径不一致。
  */
-import type { Experiment, Trial, VariableDef } from '@/data/schema';
+import type { AnalysisFinding, Experiment, Trial, VariableDef } from '@/data/schema';
 import { isUsableTrial, readParam, trialInvalidReason } from '@/data/integrity';
 import { CORNERING_DEPENDENT_KEY, CORNERING_PARAM_KEYS } from '@/data/variables';
 
@@ -78,6 +78,28 @@ export function validateVariableRoles(exp: Experiment): string[] {
     issues.push(`控制变量缺少 ${names.join('、')}：除自变量外的参数都必须保持不变，否则无法归因。`);
   }
   return issues;
+}
+
+/** 研究发现的证据校验：引用必须存在且当前合格（T05，规则驱动） */
+export interface EvidenceCheck {
+  ok: boolean;
+  problems: string[];
+}
+
+export function checkFindingEvidence(report: ComparisonReport, finding: AnalysisFinding): EvidenceCheck {
+  const problems: string[] = [];
+  if (finding.observation.trim().length < 8) problems.push('观察描述至少 8 个字');
+  if (finding.evidenceTrialIds.length === 0) problems.push('缺少证据试跑引用：发现必须关联具体试跑 ID');
+  const eligibleIds = new Set(report.eligible.map((t) => t.id));
+  const existingIds = new Set(report.evaluations.map((e) => e.trial.id));
+  for (const id of finding.evidenceTrialIds) {
+    if (!existingIds.has(id)) {
+      problems.push(`引用的试跑 ${id} 不存在于当前实验`);
+    } else if (!eligibleIds.has(id)) {
+      problems.push(`引用的试跑 ${id} 已不符合当前对照资格（混杂 / 无效 / 方案变更），请重新确认研究发现`);
+    }
+  }
+  return { ok: problems.length === 0, problems };
 }
 
 /** 统一对照资格判定：有效记录 + 明确自变量 + 控制变量一致 + 不同取值 */

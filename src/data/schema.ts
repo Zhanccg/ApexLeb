@@ -92,6 +92,8 @@ export interface Analysis {
   method: string;
   findings: AnalysisFinding[];
   createdAt: string;
+  /** 分析者声明的模型局限（T05） */
+  limitations?: string;
 }
 
 export interface Conclusion {

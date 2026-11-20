@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 380" font-family="'Segoe UI', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <linearGradient id="area5" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4cc3ff" stop-opacity="0.26"/>
+      <stop offset="1" stop-color="#4cc3ff" stop-opacity="0.02"/>
+    </linearGradient>
+  </defs>
+  <rect width="720" height="380" rx="10" fill="#0d1219"/>
+  <rect x="0.5" y="0.5" width="719" height="379" rx="10" fill="none" stroke="#1c2634"/>
+  <text x="24" y="30" font-size="14" font-weight="700" fill="#eef3f8">T05 对照曲线 · 水平汇总视图（真实试跑 · R=50 m · μ=1）</text>
+  <text x="696" y="30" text-anchor="end" font-size="10" letter-spacing="2" fill="#647182" font-family="'JetBrains Mono', monospace">ay = v²/R</text>
+
+  <g stroke="#1c2634" stroke-dasharray="3 5">
+    <line x1="70" y1="300" x2="690" y2="300"/>
+    <line x1="70" y1="222.9" x2="690" y2="222.9"/>
+    <line x1="70" y1="145.7" x2="690" y2="145.7"/>
+    <line x1="70" y1="68.6" x2="690" y2="68.6"/>
+  </g>
+  <g font-size="10" fill="#647182" text-anchor="end" font-family="'JetBrains Mono', monospace">
+    <text x="62" y="303">0</text><text x="62" y="226">4</text><text x="62" y="149">8</text><text x="62" y="72">12</text>
+  </g>
+  <text x="24" y="52" font-size="10" fill="#8b98a9">ay / m/s²</text>
+  <text x="690" y="330" text-anchor="end" font-size="10" fill="#8b98a9">v / km/h</text>
+  <g font-size="10" fill="#647182" text-anchor="middle" font-family="'JetBrains Mono', monospace">
+    <text x="214.7" y="318">54</text><text x="400.7" y="318">72</text><text x="586.7" y="318">90</text>
+  </g>
+
+  <line x1="70" y1="110.8" x2="690" y2="110.8" stroke="#ffb800" stroke-width="1.4" stroke-dasharray="7 5"/>
+  <text x="688" y="104" text-anchor="end" font-size="10" fill="#ffb800" font-family="'JetBrains Mono', monospace">ay_max = μg = 9.81 m/s²</text>
+
+  <path d="M214.7 213.2 L400.7 145.7 L586.7 58.9 L586.7 300 L214.7 300 Z" fill="url(#area5)"/>
+  <path d="M214.7 213.2 L400.7 145.7 L586.7 58.9" fill="none" stroke="#4cc3ff" stroke-width="2.4" stroke-linejoin="round"/>
+
+  <!-- level 54: n=2 with replicate ring -->
+  <circle cx="214.7" cy="213.2" r="8" fill="none" stroke="#4cc3ff" stroke-width="1" opacity="0.45"/>
+  <circle cx="214.7" cy="213.2" r="4.5" fill="#0d1219" stroke="#4cc3ff" stroke-width="2"/>
+  <text x="214.7" y="196" text-anchor="middle" font-size="10" font-weight="700" fill="#5ce8d8" font-family="'JetBrains Mono', monospace">n=2</text>
+  <circle cx="400.7" cy="145.7" r="4.5" fill="#0d1219" stroke="#4cc3ff" stroke-width="2"/>
+  <text x="400.7" y="129" text-anchor="middle" font-size="10" font-weight="700" fill="#5ce8d8" font-family="'JetBrains Mono', monospace">n=1</text>
+  <circle cx="586.7" cy="58.9" r="5" fill="#0d1219" stroke="#ffb800" stroke-width="2.2"/>
+  <text x="586.7" y="42" text-anchor="middle" font-size="10" font-weight="700" fill="#ffb800" font-family="'JetBrains Mono', monospace">n=1 · λ 127.4%</text>
+
+  <g font-size="10" fill="#8b98a9" font-family="'JetBrains Mono', monospace">
+    <text x="228" y="228">4.50 m/s² · 证据 #01 #02（#02 重复）</text>
+    <text x="414" y="160">8.00 m/s² · 证据 #04</text>
+    <text x="576" y="76" text-anchor="end">12.50 m/s² · 证据 #05</text>
+  </g>
+  <text x="24" y="352" font-size="10" fill="#647182">混杂记录 #03（72 km/h, R=60 m）不进入曲线与合格 CSV · 重复试跑计入 n 但不新增对照水平</text>
+  <text x="24" y="368" font-size="10" fill="#647182">确定性简化模型计算值，未添加人为噪声 · 非真实车辆测试数据 · v_limit ≈ 79.73 km/h</text>
+</svg>
