@@ -26,7 +26,7 @@ export default function ReportsPage() {
   return (
     <div className="space-y-6">
       <header className="fade-up">
-        <p className="num text-[11px] tracking-[0.35em] text-signal-magenta">DEBRIEF · REPORT CENTER</p>
+        <p className="num text-[11px] tracking-[0.35em] text-race-400">DEBRIEF · REPORT CENTER</p>
         <h1 className="font-display mt-2 text-3xl font-bold tracking-wide text-mist-100">报告中心</h1>
         <p className="mt-1.5 text-sm text-mist-500">
           按「问题 → 假设 → 方法 → 数据 → 分析 → 结论 → 局限」标准结构生成可复现的 Markdown 报告。
@@ -67,7 +67,7 @@ export default function ReportsPage() {
       </Panel>
 
       {genError && (
-        <p role="alert" className="fade-up rounded border border-race-500/50 bg-race-500/10 px-3 py-2 text-xs font-semibold text-race-400">
+        <p role="alert" className="fade-up rounded border border-danger-500/50 bg-danger-500/10 px-3 py-2 text-xs font-semibold text-danger-400">
           ✕ {genError}
         </p>
       )}
@@ -83,7 +83,7 @@ export default function ReportsPage() {
                 key={r.id}
                 onClick={() => setSelectedId(r.id)}
                 className={`w-full cursor-pointer rounded-lg border p-3.5 text-left transition-colors ${
-                  selected?.id === r.id ? 'border-signal-magenta/50 bg-signal-magenta/8' : 'border-line bg-carbon-850 hover:border-line-bright'
+                  selected?.id === r.id ? 'border-race-500/50 bg-race-500/8' : 'border-line bg-carbon-850 hover:border-line-bright'
                 }`}
               >
                 <p className="text-sm font-bold text-mist-100">{r.title}</p>
@@ -114,7 +114,7 @@ export default function ReportsPage() {
                       }
                     }}
                     className={`cursor-pointer rounded border px-2.5 py-1 text-[11px] font-bold ${
-                      pendingDelete === selected.id ? 'border-race-500 bg-race-500/25 text-race-400' : 'border-line text-mist-600 hover:text-race-400'
+                      pendingDelete === selected.id ? 'border-danger-500 bg-danger-500/25 text-danger-400' : 'border-line text-mist-600 hover:text-danger-400'
                     }`}
                   >
                     {pendingDelete === selected.id ? '确认删除?' : '删除'}

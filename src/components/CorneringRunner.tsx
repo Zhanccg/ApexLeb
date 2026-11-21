@@ -200,7 +200,7 @@ export default function CorneringRunner({
     eligible: { border: 'border-tele-500/50 bg-tele-500/8', text: 'text-tele-300', icon: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1.2 14.4-4-4 1.4-1.4 2.6 2.6 5.6-5.6 1.4 1.4-7 7z' },
     replicate: { border: 'border-signal-ice/50 bg-signal-ice/8', text: 'text-signal-ice', icon: 'M12 4V1L8 5l4 4V6a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z' },
     confounded: { border: 'border-signal-amber/60 bg-signal-amber/10', text: 'text-signal-amber', icon: 'M12 2 1 21h22L12 2zm1 14h-2v2h2v-2zm0-7h-2v5h2V9z' },
-    invalid: { border: 'border-race-500/60 bg-race-500/10', text: 'text-race-400', icon: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm4.3 12.9-1.4 1.4-2.9-2.9-2.9 2.9-1.4-1.4 2.9-2.9-2.9-2.9 1.4-1.4 2.9 2.9 2.9-2.9 1.4 1.4-2.9 2.9 2.9 2.9z' },
+    invalid: { border: 'border-danger-500/60 bg-danger-500/10', text: 'text-danger-400', icon: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm4.3 12.9-1.4 1.4-2.9-2.9-2.9 2.9-1.4-1.4 2.9-2.9-2.9-2.9 1.4-1.4 2.9 2.9 2.9-2.9 1.4 1.4-2.9 2.9 2.9 2.9z' },
     scheme: { border: 'border-signal-amber/60 bg-signal-amber/10', text: 'text-signal-amber', icon: 'M12 2 1 21h22L12 2zm1 14h-2v2h2v-2zm0-7h-2v5h2V9z' },
   } as const;
   const FEEDBACK_TITLE = {
@@ -230,7 +230,7 @@ export default function CorneringRunner({
               自变量 {report.independent.name} {report.independent.symbol}
             </span>
           ) : (
-            <span className="rounded border border-race-500/50 bg-race-500/15 px-2 py-0.5 font-bold text-race-400">未设自变量</span>
+            <span className="rounded border border-danger-500/50 bg-danger-500/15 px-2 py-0.5 font-bold text-danger-400">未设自变量</span>
           )}
           {report.controlled.map((v) => (
             <span key={v.id} className="rounded border border-signal-amber/40 bg-signal-amber/10 px-2 py-0.5 font-semibold text-signal-amber">
@@ -251,7 +251,7 @@ export default function CorneringRunner({
               </span>
               <span
                 className={`mt-1.5 flex items-center rounded border bg-carbon-950 transition-colors focus-within:border-tele-500/60 focus-within:ring-1 focus-within:ring-tele-500/40 ${
-                  errors[f.key] ? 'border-race-500/70' : 'border-line'
+                  errors[f.key] ? 'border-danger-500/70' : 'border-line'
                 }`}
               >
                 <input
@@ -271,7 +271,7 @@ export default function CorneringRunner({
                 />
                 <span className="num shrink-0 border-l border-line px-2 text-[10px] text-mist-500">{f.unit}</span>
               </span>
-              <span className={`mt-1 block text-[10px] leading-snug ${errors[f.key] ? 'font-semibold text-race-400' : 'text-mist-600'}`}>
+              <span className={`mt-1 block text-[10px] leading-snug ${errors[f.key] ? 'font-semibold text-danger-400' : 'text-mist-600'}`}>
                 {errors[f.key] ?? f.hint}
               </span>
             </label>
@@ -287,7 +287,7 @@ export default function CorneringRunner({
           </p>
         </div>
         {computeError && (
-          <p role="alert" className="fade-up mt-3 rounded border border-race-500/50 bg-race-500/10 px-3 py-2 text-xs font-semibold leading-relaxed text-race-400">
+          <p role="alert" className="fade-up mt-3 rounded border border-danger-500/50 bg-danger-500/10 px-3 py-2 text-xs font-semibold leading-relaxed text-danger-400">
             ✕ {computeError}
           </p>
         )}
@@ -311,15 +311,15 @@ export default function CorneringRunner({
             <p className="num mt-0.5 text-[10px] text-mist-600">= {(latestResult.lateralAccelMs2 / G).toFixed(3)} g</p>
           </div>
           <div className="panel relative overflow-hidden p-3">
-            <div className={`absolute inset-x-0 top-0 h-0.5 ${exceeded ? 'bg-race-500' : 'bg-tele-400'}`} />
+            <div className={`absolute inset-x-0 top-0 h-0.5 ${exceeded ? 'bg-danger-500' : 'bg-tele-400'}`} />
             <p className="panel-title">附着利用率 λ</p>
-            <p className={`num mt-1.5 text-2xl font-bold ${exceeded ? 'text-race-400' : 'text-tele-300'}`}>
+            <p className={`num mt-1.5 text-2xl font-bold ${exceeded ? 'text-danger-400' : 'text-tele-300'}`}>
               {(latestResult.gripUtilization * 100).toFixed(1)}
               <span className="ml-1 text-xs font-medium text-mist-500">%</span>
             </p>
             <div className="mt-1.5 h-1 overflow-hidden rounded bg-carbon-700">
               <div
-                className={`h-full rounded transition-all duration-500 ${exceeded ? 'bg-race-500' : 'bg-tele-400'}`}
+                className={`h-full rounded transition-all duration-500 ${exceeded ? 'bg-danger-500' : 'bg-tele-400'}`}
                 style={{ width: `${Math.min(100, latestResult.gripUtilization * 100)}%` }}
               />
             </div>
@@ -415,7 +415,7 @@ export default function CorneringRunner({
             </div>
           </div>
           {fixError && (
-            <p role="alert" className="mt-2 rounded border border-race-500/50 bg-race-500/10 px-2 py-1.5 text-[11px] font-semibold leading-relaxed text-race-400">
+            <p role="alert" className="mt-2 rounded border border-danger-500/50 bg-danger-500/10 px-2 py-1.5 text-[11px] font-semibold leading-relaxed text-danger-400">
               ✕ 无法自动恢复：{fixError}
             </p>
           )}
@@ -443,7 +443,7 @@ export default function CorneringRunner({
               : `距离解锁数据分析还差 ${missingLevels} 个不同有效自变量水平${report.counts.eligible < MIN_ELIGIBLE_TRIALS ? `，合格对照还差 ${MIN_ELIGIBLE_TRIALS - report.counts.eligible} 条` : ''}。`}
         </p>
         {stageError && (
-          <p role="alert" className="mt-2 rounded border border-race-500/50 bg-race-500/10 px-2 py-1.5 text-[11px] font-semibold text-race-400">
+          <p role="alert" className="mt-2 rounded border border-danger-500/50 bg-danger-500/10 px-2 py-1.5 text-[11px] font-semibold text-danger-400">
             ✕ {stageError}
           </p>
         )}

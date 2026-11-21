@@ -165,16 +165,16 @@ export default function MethodEditor({
       </div>
 
       {issues.length > 0 && (
-        <ul role="alert" className="space-y-1 rounded border border-race-500/50 bg-race-500/10 p-3">
+        <ul role="alert" className="space-y-1 rounded border border-danger-500/50 bg-danger-500/10 p-3">
           {issues.map((i, n) => (
-            <li key={n} className="text-xs font-semibold leading-relaxed text-race-400">✕ {i}</li>
+            <li key={n} className="text-xs font-semibold leading-relaxed text-danger-400">✕ {i}</li>
           ))}
         </ul>
       )}
       {!textOk && (
         <p className="text-xs text-signal-amber">假设陈述至少 8 个字，且必须填写物理依据后才能保存。</p>
       )}
-      {error && <p role="alert" className="text-xs font-semibold text-race-400">✕ {error}</p>}
+      {error && <p role="alert" className="text-xs font-semibold text-danger-400">✕ {error}</p>}
 
       <div className="flex flex-wrap items-center gap-2">
         <Button onClick={onSave} disabled={!canSave}>保存方法设置</Button>

@@ -13,6 +13,7 @@ import MethodEditor from '@/components/MethodEditor';
 import MethodCoach from '@/components/MethodCoach';
 import AnalysisWorkbench from '@/components/AnalysisWorkbench';
 import { Sparkline, TelemetryChart } from '@/components/TelemetryChart';
+import { T } from '@/styles/palette';
 
 const ROLE_STYLE = {
   independent: 'text-race-400 border-race-500/40 bg-race-500/10',
@@ -358,14 +359,14 @@ export default function ExperimentDetailPage() {
                               <td className="num py-2 pr-2 text-mist-300">{fmtParam(readParam(t, 'radiusM'))}</td>
                               <td className="num py-2 pr-2 text-mist-300">{fmtParam(readParam(t, 'mu'))}</td>
                               <td className="num py-2 pr-2 text-signal-ice">{fmtNum(readMetric(t, 'lateralAccelMs2'))}</td>
-                              <td className={`num py-2 pr-2 font-bold ${over ? 'text-race-400' : 'text-tele-300'}`}>
+                              <td className={`num py-2 pr-2 font-bold ${over ? 'text-danger-400' : 'text-tele-300'}`}>
                                 {lambda === undefined ? '非有限' : `${(lambda * 100).toFixed(1)}%`}
                               </td>
                               <td className="num py-2 pr-2 text-signal-violet">{fmtNum(readMetric(t, 'limitSpeedKmh'))}</td>
                               <td className="py-2">
                                 <span className={`rounded border px-1.5 py-0.5 text-[10px] font-bold ${
                                   bad
-                                    ? 'border-race-500/50 bg-race-500/15 text-race-400'
+                                    ? 'border-danger-500/50 bg-danger-500/15 text-danger-400'
                                     : over
                                       ? 'border-signal-amber/40 bg-signal-amber/10 text-signal-amber'
                                       : 'border-signal-lime/40 bg-signal-lime/10 text-signal-lime'
@@ -389,7 +390,7 @@ export default function ExperimentDetailPage() {
                     {corneringPoints.length >= 2 ? (
                       <TelemetryChart
                         points={corneringPoints}
-                        color="#4cc3ff"
+                        color={T.ice}
                         xLabel={`${comparison?.independent?.symbol ?? 'v'} / ${comparison?.independent?.unit ?? 'km/h'}`}
                         yLabel="ay / m/s²"
                         animate={false}
@@ -440,7 +441,7 @@ export default function ExperimentDetailPage() {
                       <td className="num py-2 pr-2 font-bold text-signal-amber">{fmtParam(readParam(t, 'mu'))}</td>
                       <td className="num py-2 pr-2 text-mist-100">{fmtNum(readMetric(t, 'brakeDistance'))} m</td>
                       <td className="num py-2 pr-2 text-mist-500">{fmtNum(readMetric(t, 'stopTime'))} s</td>
-                      <td className="py-2"><Sparkline values={samplesOf(t).map((s) => readChannel(s, 'speed')).filter((v): v is number => v !== undefined)} color={trial?.id === t.id ? '#00d2be' : '#647182'} /></td>
+                      <td className="py-2"><Sparkline values={samplesOf(t).map((s) => readChannel(s, 'speed')).filter((v): v is number => v !== undefined)} color={trial?.id === t.id ? T.tele400 : T.mist600} /></td>
                     </tr>
                   ))}
                 </tbody>
@@ -456,7 +457,7 @@ export default function ExperimentDetailPage() {
                     const y = readChannel(s, 'speed');
                     return x !== undefined && y !== undefined ? [{ x, y }] : [];
                   })}
-                  color="#e10600"
+                  color={T.race500}
                   xLabel="t / s"
                   yLabel="speed / km/h"
                   animate={false}
@@ -498,7 +499,7 @@ export default function ExperimentDetailPage() {
                   <p className="text-sm leading-relaxed text-mist-300">{f.observation}</p>
                   <p className="num mt-2 flex items-center gap-2 text-[10px] text-mist-600">
                     证据 {f.evidenceTrialIds.join(' · ')}
-                    <span className={`rounded px-1.5 py-0.5 font-bold ${f.supportsHypothesis ? 'bg-tele-500/15 text-tele-300' : 'bg-race-500/15 text-race-400'}`}>
+                    <span className={`rounded px-1.5 py-0.5 font-bold ${f.supportsHypothesis ? 'bg-tele-500/15 text-tele-300' : 'bg-danger-500/15 text-danger-400'}`}>
                       {f.supportsHypothesis ? '支持假设' : '不支持假设'}
                     </span>
                   </p>
@@ -525,7 +526,7 @@ export default function ExperimentDetailPage() {
                 <p key={f.id} className="text-mist-500">
                   发现：{f.observation}
                   <span className="num ml-1 text-tele-300">证据 {f.evidenceTrialIds.join('、')}</span>
-                  <span className={`ml-1 font-bold ${f.supportsHypothesis ? 'text-tele-300' : 'text-race-400'}`}>
+                  <span className={`ml-1 font-bold ${f.supportsHypothesis ? 'text-tele-300' : 'text-danger-400'}`}>
                     {f.supportsHypothesis ? '支持假设' : '不支持假设'}
                   </span>
                 </p>
@@ -541,7 +542,7 @@ export default function ExperimentDetailPage() {
                 <div className="space-y-2.5 text-sm">
                   <p className="leading-relaxed text-mist-300">{exp.conclusion.statement}</p>
                   <p className="text-xs font-bold">
-                    {{ supported: <span className="text-tele-300">✅ 假设被数据支持</span>, rejected: <span className="text-race-400">❌ 假设被数据拒绝</span>, inconclusive: <span className="text-signal-amber">⚠️ 证据不足</span> }[exp.conclusion.hypothesisVerdict]}
+                    {{ supported: <span className="text-tele-300">✅ 假设被数据支持</span>, rejected: <span className="text-danger-400">❌ 假设被数据拒绝</span>, inconclusive: <span className="text-signal-amber">⚠️ 证据不足</span> }[exp.conclusion.hypothesisVerdict]}
                   </p>
                   {exp.conclusion.limitations?.trim() ? (
                     <p className="rounded border border-line bg-carbon-900/70 p-2.5 text-xs leading-relaxed text-mist-500">
@@ -597,10 +598,10 @@ export default function ExperimentDetailPage() {
                       aria-label="研究结论"
                       aria-invalid={Boolean(conclusionErrors.statement)}
                       placeholder="回答最初的研究问题，例如：在 R=50 m、μ=1 条件下，侧向加速度与车速平方成正比…"
-                      className={`w-full rounded border bg-carbon-900 p-3 text-sm text-mist-100 placeholder:text-mist-600 focus:border-tele-500/60 focus:outline-none ${conclusionErrors.statement ? 'border-race-500/70' : 'border-line'}`}
+                      className={`w-full rounded border bg-carbon-900 p-3 text-sm text-mist-100 placeholder:text-mist-600 focus:border-tele-500/60 focus:outline-none ${conclusionErrors.statement ? 'border-danger-500/70' : 'border-line'}`}
                     />
                     {conclusionErrors.statement && (
-                      <p role="alert" className="mt-1 text-[11px] font-semibold text-race-400">✕ {conclusionErrors.statement}</p>
+                      <p role="alert" className="mt-1 text-[11px] font-semibold text-danger-400">✕ {conclusionErrors.statement}</p>
                     )}
                   </div>
                   <select
@@ -624,10 +625,10 @@ export default function ExperimentDetailPage() {
                       aria-label="模型局限性"
                       aria-invalid={Boolean(conclusionErrors.limitations)}
                       placeholder="模型局限与适用范围（必填）：例如简化质点模型未含轮胎特性、空气动力与载荷转移…"
-                      className={`w-full rounded border bg-carbon-900 p-3 text-sm text-mist-100 placeholder:text-mist-600 focus:border-tele-500/60 focus:outline-none ${conclusionErrors.limitations ? 'border-race-500/70' : 'border-line'}`}
+                      className={`w-full rounded border bg-carbon-900 p-3 text-sm text-mist-100 placeholder:text-mist-600 focus:border-tele-500/60 focus:outline-none ${conclusionErrors.limitations ? 'border-danger-500/70' : 'border-line'}`}
                     />
                     {conclusionErrors.limitations && (
-                      <p role="alert" className="mt-1 text-[11px] font-semibold leading-relaxed text-race-400">✕ {conclusionErrors.limitations}</p>
+                      <p role="alert" className="mt-1 text-[11px] font-semibold leading-relaxed text-danger-400">✕ {conclusionErrors.limitations}</p>
                     )}
                   </div>
                   <div className="flex flex-wrap items-center gap-2">

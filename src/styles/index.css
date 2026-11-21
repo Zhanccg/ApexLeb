@@ -1,38 +1,57 @@
 @import 'tailwindcss';
 
 @theme {
-  /* 碳纤维基底 */
-  --color-carbon-950: #05070b;
-  --color-carbon-900: #090d13;
-  --color-carbon-850: #0d1219;
-  --color-carbon-800: #111823;
-  --color-carbon-700: #1a2330;
-  --color-carbon-600: #273344;
-  --color-line: #1c2634;
-  --color-line-bright: #2c3a4e;
+  /* 全部取色的唯一来源：改配色只改这一段，组件一律引用令牌。 */
 
-  /* 赛车红 — 主品牌色 */
-  --color-race-600: #b00500;
-  --color-race-500: #e10600;
-  --color-race-400: #ff3b2e;
+  /* 背景与参考层 — 中性灰，只靠明度拉开层级 */
+  --color-carbon-950: #0a0a0b;
+  --color-carbon-900: #0f1011;
+  --color-carbon-850: #161617;
+  --color-carbon-800: #1d1e20;
+  --color-carbon-700: #272829;
+  --color-carbon-600: #363738;
+  --color-line: #202122;
+  --color-line-bright: #35373a;
 
-  /* 遥测青 — 数据主色 */
-  --color-tele-500: #00b3a2;
-  --color-tele-400: #00d2be;
-  --color-tele-300: #5ce8d8;
+  /* 核心蓝 — 主操作、当前态与品牌强调，全站唯一的重点色 */
+  --color-race-700: #0f2c46;
+  --color-race-600: #17527f;
+  --color-race-500: #1f6ba8;
+  --color-race-400: #4f93cc;
+  --color-race-300: #8fbde6;
 
-  /* 信号色 */
-  --color-signal-amber: #ffb800;
-  --color-signal-lime: #a3e635;
-  --color-signal-ice: #4cc3ff;
-  --color-signal-violet: #a78bfa;
-  --color-signal-magenta: #f471b5;
+  /* 遥测读数 — 核心蓝里的浅色档，曲线与完成态 */
+  --color-tele-600: #0f6a80;
+  --color-tele-500: #15899f;
+  --color-tele-400: #24a6c2;
+  --color-tele-300: #6fcbdd;
+
+  /* 次要对比橙 — 提示、进行中与需要一眼看到的次要数值 */
+  --color-signal-amber: #e0a03c;
+
+  /* 错误与破坏性操作 — 橙的深档，与柔和提示拉开强度 */
+  --color-danger-500: #c9611f;
+  --color-danger-400: #ec8b4c;
+
+  /* 冷色档位的复用：达标=浅青，有效数据=青，推导极值=靛蓝 */
+  --color-signal-lime: #58c2d6;
+  --color-signal-ice: #2fb2cc;
+  --color-signal-violet: #7b86d8;
+
+  /* 七阶段色阶 — 蓝→青→橙单向推进，饱和度与可读明度对齐 */
+  --color-stage-1: #4f93cc;
+  --color-stage-2: #2f92c8;
+  --color-stage-3: #35b0bd;
+  --color-stage-4: #6fcbdd;
+  --color-stage-5: #f0c48a;
+  --color-stage-6: #e0a03c;
+  --color-stage-7: #d0742c;
 
   /* 中性文本 */
-  --color-mist-100: #eef3f8;
-  --color-mist-300: #c3cedb;
-  --color-mist-500: #8b98a9;
-  --color-mist-600: #647182;
+  --color-mist-100: #f2f3f4;
+  --color-mist-300: #c5c8cb;
+  --color-mist-500: #8f9296;
+  --color-mist-600: #7d8186;
 
   --font-display: 'Rajdhani', 'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', Consolas, monospace;
@@ -72,9 +91,37 @@ body {
 }
 
 @utility panel {
-  background: linear-gradient(160deg, var(--color-carbon-850), var(--color-carbon-900));
+  background: var(--color-carbon-850);
   border: 1px solid var(--color-line);
   border-radius: 10px;
+}
+
+/* 主色辉光：全部由令牌派生，组件不再写死 rgba */
+@utility glow-race {
+  box-shadow: 0 0 12px color-mix(in srgb, var(--color-race-500) 22%, transparent);
+  &:disabled {
+    box-shadow: none;
+  }
+}
+
+@utility glow-race-strong {
+  box-shadow: 0 0 16px color-mix(in srgb, var(--color-race-500) 30%, transparent);
+  &:disabled {
+    box-shadow: none;
+  }
+}
+
+@utility glow-tele {
+  box-shadow: 0 0 10px color-mix(in srgb, var(--color-tele-400) 12%, transparent);
+}
+
+/* 选中态导航轨：发车灯式左侧主色条 */
+@utility rail-left-race {
+  box-shadow: inset 3px 0 0 0 var(--color-race-500);
+}
+
+@utility ring-race {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-race-500) 45%, transparent);
 }
 
 @utility panel-title {

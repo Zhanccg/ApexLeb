@@ -2,13 +2,13 @@ import type { Experiment, StageId } from '@/data/schema';
 import { STAGES, currentStage } from '@/pedagogy';
 
 const STAGE_ACCENT = [
-  'text-race-400 border-race-500',
-  'text-signal-amber border-signal-amber',
-  'text-signal-lime border-signal-lime',
-  'text-tele-400 border-tele-400',
-  'text-signal-ice border-signal-ice',
-  'text-signal-violet border-signal-violet',
-  'text-signal-magenta border-signal-magenta',
+  'text-stage-1 border-stage-1',
+  'text-stage-2 border-stage-2',
+  'text-stage-3 border-stage-3',
+  'text-stage-4 border-stage-4',
+  'text-stage-5 border-stage-5',
+  'text-stage-6 border-stage-6',
+  'text-stage-7 border-stage-7',
 ];
 
 export default function StageTracker({ exp, onSelect }: { exp: Experiment; onSelect?: (id: StageId) => void }) {
@@ -26,7 +26,7 @@ export default function StageTracker({ exp, onSelect }: { exp: Experiment; onSel
                 st === 'done'
                   ? 'border-line bg-carbon-800/80'
                   : isActive
-                    ? `bg-carbon-800 ${STAGE_ACCENT[i].split(' ')[1]} shadow-[0_0_16px_rgba(0,210,190,0.12)]`
+                    ? `bg-carbon-800 ${STAGE_ACCENT[i].split(' ')[1]} glow-tele`
                     : 'border-line bg-carbon-900 opacity-55'
               }`}
               title={`${s.name} · ${st === 'done' ? '已完成' : isActive ? '进行中' : '未解锁'}`}

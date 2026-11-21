@@ -1,14 +1,15 @@
 import { STAGES } from '@/pedagogy';
 import { Panel } from '@/components/ui';
+import { T } from '@/styles/palette';
 
 const ACCENTS = [
-  { text: 'text-race-400', border: 'border-race-500/40', bg: 'bg-race-500', glow: 'rgba(225,6,0,0.14)' },
-  { text: 'text-signal-amber', border: 'border-signal-amber/40', bg: 'bg-signal-amber', glow: 'rgba(255,184,0,0.12)' },
-  { text: 'text-signal-lime', border: 'border-signal-lime/40', bg: 'bg-signal-lime', glow: 'rgba(163,230,53,0.10)' },
-  { text: 'text-tele-400', border: 'border-tele-500/40', bg: 'bg-tele-400', glow: 'rgba(0,210,190,0.12)' },
-  { text: 'text-signal-ice', border: 'border-signal-ice/40', bg: 'bg-signal-ice', glow: 'rgba(76,195,255,0.12)' },
-  { text: 'text-signal-violet', border: 'border-signal-violet/40', bg: 'bg-signal-violet', glow: 'rgba(167,139,250,0.12)' },
-  { text: 'text-signal-magenta', border: 'border-signal-magenta/40', bg: 'bg-signal-magenta', glow: 'rgba(244,113,181,0.12)' },
+  { text: 'text-stage-1', border: 'border-stage-1/40', bg: 'bg-stage-1', glow: T.stage1 },
+  { text: 'text-stage-2', border: 'border-stage-2/40', bg: 'bg-stage-2', glow: T.stage2 },
+  { text: 'text-stage-3', border: 'border-stage-3/40', bg: 'bg-stage-3', glow: T.stage3 },
+  { text: 'text-stage-4', border: 'border-stage-4/40', bg: 'bg-stage-4', glow: T.stage4 },
+  { text: 'text-stage-5', border: 'border-stage-5/40', bg: 'bg-stage-5', glow: T.stage5 },
+  { text: 'text-stage-6', border: 'border-stage-6/40', bg: 'bg-stage-6', glow: T.stage6 },
+  { text: 'text-stage-7', border: 'border-stage-7/40', bg: 'bg-stage-7', glow: T.stage7 },
 ];
 
 export default function LearnPage() {
@@ -26,14 +27,14 @@ export default function LearnPage() {
 
       <div className="relative space-y-4">
         {/* 时间轴线 */}
-        <div className="absolute top-4 bottom-4 left-[21px] hidden w-px bg-gradient-to-b from-race-500 via-tele-400 to-signal-magenta opacity-40 sm:block" />
+        <div className="absolute top-4 bottom-4 left-[21px] hidden w-px bg-gradient-to-b from-stage-1 via-stage-4 to-stage-7 opacity-40 sm:block" />
         {STAGES.map((s, i) => {
           const a = ACCENTS[i];
           return (
             <article key={s.id} className="fade-up relative sm:pl-14" style={{ animationDelay: `${i * 0.06}s` }}>
               <span
                 className={`num absolute top-5 left-0 hidden h-11 w-11 items-center justify-center rounded-full border bg-carbon-900 text-sm font-bold sm:flex ${a.border} ${a.text}`}
-                style={{ boxShadow: `0 0 20px ${a.glow}` }}
+                style={{ boxShadow: `0 0 20px color-mix(in srgb, ${a.glow} 14%, transparent)` }}
               >
                 {String(s.order).padStart(2, '0')}
               </span>
@@ -60,8 +61,8 @@ export default function LearnPage() {
                       </ul>
                     </div>
                     <div className="space-y-3">
-                      <div className="rounded border border-race-500/30 bg-race-500/8 p-3">
-                        <p className="text-[10px] font-bold tracking-widest text-race-400">常见误区 · PITFALL</p>
+                      <div className="rounded border border-danger-500/30 bg-danger-500/8 p-3">
+                        <p className="text-[10px] font-bold tracking-widest text-danger-400">常见误区 · PITFALL</p>
                         <p className="mt-1 text-xs leading-relaxed text-mist-500">{s.pitfall}</p>
                       </div>
                       <div className="rounded border border-line bg-carbon-900/70 p-3">

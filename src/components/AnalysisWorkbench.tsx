@@ -8,6 +8,7 @@ import { downloadExperimentCsv } from '@/report/csv';
 import { G } from '@/engine/constants';
 import { Button } from '@/components/ui';
 import { TelemetryChart } from '@/components/TelemetryChart';
+import { T } from '@/styles/palette';
 
 interface Draft {
   observation: string;
@@ -153,7 +154,7 @@ export default function AnalysisWorkbench({
           <TelemetryChart
             points={chart.points}
             annotations={chart.annotations}
-            color="#4cc3ff"
+            color={T.ice}
             xLabel={`${indSymbol} / ${indUnit}`}
             yLabel="ay / m/s²"
             animate={false}
@@ -211,7 +212,7 @@ export default function AnalysisWorkbench({
                       checked={selected}
                       onChange={() => toggleEvidence(t.id)}
                       aria-label={`引用试跑 ${t.id} 作为证据`}
-                      className="h-3.5 w-3.5 cursor-pointer accent-[#e10600]"
+                      className="h-3.5 w-3.5 cursor-pointer accent-race-500"
                     />
                   </td>
                 </tr>
@@ -241,7 +242,7 @@ export default function AnalysisWorkbench({
                 {f.evidenceTrialIds.map((id) => (
                   <span key={id} className="num rounded bg-carbon-700/70 px-1.5 py-0.5 text-[10px] text-tele-300" title="证据试跑 ID">{id}</span>
                 ))}
-                <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${f.supportsHypothesis ? 'bg-tele-500/15 text-tele-300' : 'bg-race-500/15 text-race-400'}`}>
+                <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${f.supportsHypothesis ? 'bg-tele-500/15 text-tele-300' : 'bg-danger-500/15 text-danger-400'}`}>
                   {f.supportsHypothesis ? '支持假设' : '不支持假设'}
                 </span>
                 <span className="ml-auto flex gap-2">
@@ -259,7 +260,7 @@ export default function AnalysisWorkbench({
                       deleteFinding(exp.id, f.id);
                       notify('研究发现已删除', 'ok');
                     }}
-                    className="cursor-pointer text-[11px] font-semibold text-mist-600 hover:text-race-400"
+                    className="cursor-pointer text-[11px] font-semibold text-mist-600 hover:text-danger-400"
                   >
                     删除
                   </button>
@@ -320,7 +321,7 @@ export default function AnalysisWorkbench({
           {draftProblems.length > 0 && (
             <ul role="alert" className="space-y-1">
               {draftProblems.map((p, n) => (
-                <li key={n} className="text-[11px] font-semibold text-race-400">✕ {p}</li>
+                <li key={n} className="text-[11px] font-semibold text-danger-400">✕ {p}</li>
               ))}
             </ul>
           )}

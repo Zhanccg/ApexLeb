@@ -4,7 +4,7 @@ import { readParam } from '@/data/integrity';
 import { fmtParam } from '@/data/integrity';
 
 const TONE_STYLE = {
-  danger: 'border-race-500/50 bg-race-500/10 text-race-400',
+  danger: 'border-danger-500/50 bg-danger-500/10 text-danger-400',
   warn: 'border-signal-amber/40 bg-signal-amber/10 text-signal-amber',
   ok: 'border-tele-500/40 bg-tele-500/10 text-tele-300',
 } as const;
@@ -41,7 +41,7 @@ export default function MethodCoach({ exp, report }: { exp: Experiment; report: 
             自变量 {independent.name} {independent.symbol}
           </span>
         ) : (
-          <span className="rounded border border-race-500/50 bg-race-500/15 px-2 py-0.5 font-bold text-race-400">未设自变量</span>
+          <span className="rounded border border-danger-500/50 bg-danger-500/15 px-2 py-0.5 font-bold text-danger-400">未设自变量</span>
         )}
         {controlled.map((v) => (
           <span key={v.id} className="rounded border border-signal-amber/40 bg-signal-amber/10 px-2 py-0.5 font-semibold text-signal-amber">
@@ -109,7 +109,7 @@ export default function MethodCoach({ exp, report }: { exp: Experiment; report: 
                   <td className="px-3 py-2">
                     <span className={`rounded border px-1.5 py-0.5 text-[10px] font-bold ${
                       !e.usable
-                        ? 'border-race-500/50 bg-race-500/15 text-race-400'
+                        ? 'border-danger-500/50 bg-danger-500/15 text-danger-400'
                         : e.confounded.length > 0
                           ? 'border-signal-amber/40 bg-signal-amber/10 text-signal-amber'
                           : 'border-signal-ice/40 bg-signal-ice/10 text-signal-ice'

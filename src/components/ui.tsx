@@ -1,12 +1,20 @@
 import type { ReactNode } from 'react';
 import type { ExperimentCategory } from '@/data/schema';
+import type { FlowStatusKey } from '@/data/templates';
 import { CATEGORY_LABEL } from '@/data/schema';
 
 export const CATEGORY_COLOR: Record<ExperimentCategory, string> = {
   braking: 'text-race-400 border-race-500/40 bg-race-500/10',
   cornering: 'text-signal-amber border-signal-amber/40 bg-signal-amber/10',
-  acceleration: 'text-signal-lime border-signal-lime/40 bg-signal-lime/10',
-  aero: 'text-signal-ice border-signal-ice/40 bg-signal-ice/10',
+  acceleration: 'text-signal-ice border-signal-ice/40 bg-signal-ice/10',
+  aero: 'text-signal-violet border-signal-violet/40 bg-signal-violet/10',
+};
+
+/** 流程状态徽标配色，实验台与实验库共用 */
+export const FLOW_TONE: Record<FlowStatusKey, string> = {
+  full: 'border-tele-500/40 bg-tele-500/10 text-tele-300',
+  preset: 'border-signal-ice/40 bg-signal-ice/10 text-signal-ice',
+  'no-runner': 'border-signal-amber/40 bg-signal-amber/10 text-signal-amber',
 };
 
 export function CategoryBadge({ category }: { category: ExperimentCategory }) {
@@ -24,15 +32,17 @@ export function Panel({
   children,
   className = '',
   id,
+  dataTour,
 }: {
   title?: string;
   right?: ReactNode;
   children: ReactNode;
   className?: string;
   id?: string;
+  dataTour?: string;
 }) {
   return (
-    <section id={id} className={`panel overflow-hidden ${className}`}>
+    <section id={id} data-tour={dataTour} className={`panel overflow-hidden ${className}`}>
       {title && (
         <header className="flex items-center justify-between gap-3 border-b border-line px-4 py-2.5">
           <h2 className="panel-title flex items-center gap-2">
@@ -74,13 +84,13 @@ export function StatCard({
 }
 
 const SEG_COLORS = [
-  'bg-race-500',
-  'bg-signal-amber',
-  'bg-signal-lime',
-  'bg-tele-400',
-  'bg-signal-ice',
-  'bg-signal-violet',
-  'bg-signal-magenta',
+  'bg-stage-1',
+  'bg-stage-2',
+  'bg-stage-3',
+  'bg-stage-4',
+  'bg-stage-5',
+  'bg-stage-6',
+  'bg-stage-7',
 ];
 
 /** 七段式阶段进度条：每段对应一个科研阶段 */
@@ -128,10 +138,10 @@ export function Button({
 }) {
   const styles = {
     primary:
-      'bg-race-500 text-white hover:bg-race-400 shadow-[0_0_18px_rgba(225,6,0,0.35)] disabled:shadow-none',
+      'bg-race-500 text-white hover:bg-race-400 glow-race',
     tele: 'bg-tele-500/15 text-tele-300 border border-tele-500/40 hover:bg-tele-500/25',
     ghost: 'bg-carbon-700/60 text-mist-300 border border-line-bright hover:bg-carbon-600/60',
-    danger: 'bg-transparent text-race-400 border border-race-500/40 hover:bg-race-500/15',
+    danger: 'bg-transparent text-danger-400 border border-danger-500/40 hover:bg-danger-500/15',
   }[variant];
   return (
     <button
@@ -161,7 +171,7 @@ export function Toast({ message, tone }: { message: string; tone: 'ok' | 'err' }
       className={`fade-up pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-md border px-4 py-2.5 text-sm font-medium shadow-xl backdrop-blur ${
         tone === 'ok'
           ? 'border-tele-500/50 bg-carbon-800/95 text-tele-300'
-          : 'border-race-500/50 bg-carbon-800/95 text-race-400'
+          : 'border-danger-500/50 bg-carbon-800/95 text-danger-400'
       }`}
     >
       {tone === 'ok' ? '✓ ' : '✕ '}
